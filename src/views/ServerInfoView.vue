@@ -44,7 +44,7 @@
     <div class="server-info">
       <div class="title">
         <h4>
-          2021.04 ~ 2010.09
+          2021.04 ~ 2022.09
         </h4>
       </div>
       <div class="content">
