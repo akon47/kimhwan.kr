@@ -4,11 +4,13 @@
       <div v-show="title" class="title">
         {{ title }}
       </div>
-      <router-view v-slot="{ Component }">
-        <transition name="component-fade" mode="out-in">
-          <component :is="Component" class="content-item"/>
-        </transition>
-      </router-view>
+      <div class="content-item-container">
+        <router-view v-slot="{ Component }">
+          <transition name="component-fade" mode="out-in">
+            <component :is="Component" class="content-item"/>
+          </transition>
+        </router-view>
+      </div>
     </div>
   </div>
 </template>
@@ -48,15 +50,28 @@ export default defineComponent({
   box-shadow: 0 0 11px var(--base-shadow-color);
 }
 
+@media (max-width: 720px) {
+  .content-container > .content-wrapper {
+    min-width: 0px;
+    justify-self: stretch;
+    grid-template-columns: minmax(0, auto);
+    padding: 20px;
+  }
+}
+
 .content-wrapper > .title {
   justify-self: center;
   font-size: 30px;
   width: 100%;
   text-align: center;
-  padding: 20px 20px 20px 20px;
+  padding: 20px;
   margin-bottom: 40px;
   border-bottom: 3px solid var(--border-color);
   box-sizing: border-box;
+}
+
+.content-item-container {
+  overflow-x: auto;
 }
 
 .content-wrapper > .content-item {

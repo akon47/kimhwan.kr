@@ -3,7 +3,7 @@
     <div class="server-info">
       <div class="title">
         <h4>
-          2022.09 ~
+          📅 2022.09 ~ Present
         </h4>
       </div>
       <div class="content">
@@ -23,6 +23,19 @@
           SSD
         </h5>
         <span>SAMSUNG 980 NVMe M.2 SSD 1 TB</span>
+        <h5>
+          Running Services
+        </h5>
+        <div class="services">
+          <div><a href="https://kimhwan.kr/" target="_blank">Kimhwan.kr</a></div>
+          <div><a href="https://blog.kimhwan.kr/" target="_blank">Hwan'Story</a></div>
+          <div><a href="https://hwanscord.kimhwan.kr/" target="_blank">Hwanscord</a></div>
+          <div><a href="https://shootgame.kimhwan.kr/" target="_blank">ShootGame</a></div>
+          <div><a href="https://github.com/akon47/visit-counter" target="_blank">VisitCounter</a></div>
+          <div>Jenkins</div>
+          <div>Postfix</div>
+          <div>Nginx API Gateway</div>
+        </div>
       </div>
       <div class="images">
         <a href="https://user-images.githubusercontent.com/49547202/189513989-ffb8d70e-af79-429a-abeb-da6c6a4235c2.png"
@@ -44,7 +57,7 @@
     <div class="server-info">
       <div class="title">
         <h4>
-          2021.04 ~ 2022.09
+          📅 2021.04 ~ Present
         </h4>
       </div>
       <div class="content">
@@ -68,6 +81,10 @@
           CASE & MAINBOARD & POWER
         </h5>
         <span>ASRock DeskMini X300 120W</span>
+        <h5>
+          Running Services
+        </h5>
+        <span>None currently</span>
       </div>
       <div class="images">
         <a href="https://user-images.githubusercontent.com/49547202/171973908-452a9e3c-5ef4-40a5-9e61-711bf829fd86.png"
@@ -123,7 +140,8 @@ export default defineComponent({
 
 .server-info > .content {
   grid-column: 1 / span 1;
-  min-width: 400px;
+  min-width: 300px;
+  max-width: 400px;
 }
 
 .server-info > .images {
@@ -135,10 +153,32 @@ export default defineComponent({
   box-sizing: border-box;
 }
 
+@media (max-width: 720px) {
+  .server-info > .images {
+    display: none;
+  }
+}
+
 .content > span {
   padding: 0 5px;
   font-size: 14px;
   line-height: 35px;
+}
+
+.content > .services {
+  display: flex;
+  flex-wrap: wrap;
+  flex-basis: 0px;
+  flex-shrink: 0;
+  gap: 10px;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.content > .services > div {
+  padding: 2px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
 }
 
 </style>

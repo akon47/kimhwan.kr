@@ -89,4 +89,10 @@ export default defineComponent({
   gap: 20px;
 }
 
+@media (max-width: 930px) {
+  .projects-container {
+    grid-template-columns: minmax(0, auto)
+  }
+}
+
 </style>

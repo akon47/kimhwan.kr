@@ -1,8 +1,7 @@
 <template>
   <div class="overview-container">
     <div class="title">
-      <a v-if="demoUrl" :href="demoUrl" target="_blank">{{ title }}</a>
-      <span v-else>{{ title }}</span>
+      <a :href="demoUrl ? demoUrl : githubUrls[0]" target="_blank">{{ title }}</a>
     </div>
     <div class="summary">
       {{ summary }}
@@ -69,7 +68,7 @@ export default defineComponent({
   box-sizing: border-box;
 
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr auto auto;
 
   align-items: start;
@@ -131,6 +130,7 @@ export default defineComponent({
 .github-item span {
   align-self: center;
   margin-left: 5px;
+  word-wrap: anywhere;
 }
 
 </style>

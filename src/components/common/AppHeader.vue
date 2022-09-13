@@ -22,6 +22,17 @@
       <router-link to="/about">
         About
       </router-link>
+      <div class="icon-menus">
+        <router-link to="/opensource-projects">
+          🚀
+        </router-link>
+        <router-link to="/server-info">
+          🖥
+        </router-link>
+        <router-link to="/about">
+          👋
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -86,10 +97,16 @@ export default defineComponent({
   font-weight: bold;
 }
 
+@media (max-width: 500px) {
+  .title-container > .title {
+    display: none;
+  }
+}
+
 .header-container > .menu-container {
   justify-self: right;
   display: grid;
-  grid-auto-columns: auto;
+  grid-auto-columns: minmax(0, auto);
   grid-template-rows: 1fr;
   grid-auto-flow: column;
   grid-column-gap: 5px;
@@ -106,6 +123,19 @@ export default defineComponent({
   text-align: center;
 }
 
+.icon-menus {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .menu-container > a {
+    display: none;
+  }
+  .icon-menus {
+    display: flex;
+  }
+}
+
 .menu-container a:hover {
   cursor: pointer;
   background: var(--menu-hover-color);
@@ -113,6 +143,10 @@ export default defineComponent({
 
 .menu-container a.router-link-exact-active {
   background: var(--menu-hover-color);
+}
+
+.themes {
+  align-self: center;
 }
 
 .themes input {

@@ -80,6 +80,8 @@ button:hover:not([disabled]) {
   transition: var(--theme-changed-transition);
   font-family: var(--base-font-family);
   color: var(--base-color);
+
+  overflow-x: hidden;
 }
 
 a {
@@ -88,8 +90,8 @@ a {
 }
 
 a:visited {
-  text-decoration: inherit;
-  color: inherit;
+  text-decoration: none;
+  color: var(--link-accent-color)
 }
 
 a:hover {

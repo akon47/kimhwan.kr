@@ -31,7 +31,7 @@ export default defineComponent({
           to: '/server-info',
         },
         {
-          title: '🔍 About',
+          title: '👋 About',
           summary: 'about me?',
           to: '/about',
         },
