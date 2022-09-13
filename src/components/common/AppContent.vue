@@ -62,6 +62,7 @@ export default defineComponent({
 .content-wrapper > .title {
   justify-self: center;
   font-size: 30px;
+  font-weight: bold;
   width: 100%;
   text-align: center;
   padding: 20px;

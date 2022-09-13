@@ -26,12 +26,12 @@ export default defineComponent({
           to: '/opensource-projects',
         },
         {
-          title: '🖥 ServerInfo',
+          title: '🖥︎ Server Info',
           summary: 'Information about the server used to operate the current site and various other services.',
           to: '/server-info',
         },
         {
-          title: '👋 About',
+          title: '👨‍💻 About Me',
           summary: 'about me?',
           to: '/about',
         },

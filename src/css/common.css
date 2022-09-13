@@ -58,6 +58,14 @@ h6 {
   font-size: 0.875em;
 }
 
+ul {
+  padding: 10px 0px 10px 30px;
+}
+
+li {
+  margin: 3px 0px;
+}
+
 body {
   background: var(--background-color);
 }
@@ -82,6 +90,10 @@ button:hover:not([disabled]) {
   color: var(--base-color);
 
   overflow-x: hidden;
+}
+
+strong, b {
+  font-weight: bold;
 }
 
 a {

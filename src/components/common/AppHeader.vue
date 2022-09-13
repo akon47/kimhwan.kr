@@ -4,7 +4,7 @@
       <div class="title-container">
         <div class="logo"/>
         <span class="title">
-          Kim,Hwan.kr
+          Kim, Hwan
         </span>
       </div>
     </router-link>

@@ -17,7 +17,7 @@ const router = createRouter({
       name: 'Main',
       component: () => import('../views/MainView.vue'),
       meta: {
-        title: 'Welcome'
+        title: '🏡 Welcome'
       }
     },
     {
@@ -25,7 +25,7 @@ const router = createRouter({
       name: 'About',
       component: () => import('../views/AboutView.vue'),
       meta: {
-        title: '🔍 About'
+        title: '👨‍💻 About Me'
       }
     },
     {
@@ -33,7 +33,7 @@ const router = createRouter({
       name: 'ServerInfo',
       component: () => import('../views/ServerInfoView.vue'),
       meta: {
-        title: '🖥 Server Info'
+        title: '🖥︎ Server Info'
       }
     },
     {
