@@ -30,7 +30,7 @@
           🖥
         </router-link>
         <router-link to="/about">
-          👋
+          👨‍💻
         </router-link>
       </div>
     </div>
