@@ -7,23 +7,23 @@
         </h4>
       </div>
       <div class="content">
-        <h5>
+        <h5 class="os-title">
           OS
         </h5>
         <span>Proxmox Virtual Environment 7.2</span>
-        <h5>
+        <h5 class="processor-title">
           CPU
         </h5>
         <span>INTEL Core i5-12400</span>
-        <h5>
+        <h5 class="memory-title">
           MEMORY
         </h5>
         <span>DDR4 16GB PC4-25600 x 2</span>
-        <h5>
+        <h5 class="ssd-title">
           SSD
         </h5>
         <span>SAMSUNG 980 NVMe M.2 SSD 1 TB</span>
-        <h5>
+        <h5 class="services-title">
           Running Services
         </h5>
         <div class="services">
@@ -61,27 +61,25 @@
         </h4>
       </div>
       <div class="content">
-        <h5>
+        <h5 class="os-title">
           OS
         </h5>
-        <span>Ubuntu Linux Server 20.04.4 LTS</span>
-        <h5>
+        <span>Proxmox Virtual Environment 7.2</span>
+        <br/>
+        <span><del>Ubuntu Linux Server 20.04.4 LTS</del> ~ 2021.09</span>
+        <h5 class="processor-title">
           CPU
         </h5>
         <span>AMD Ryzen 3 PRO 4350G</span>
-        <h5>
+        <h5 class="memory-title">
           MEMORY
         </h5>
         <span>DDR4 8GB PC4-25600 x 2</span>
-        <h5>
+        <h5 class="ssd-title">
           SSD
         </h5>
         <span>SAMSUNG 980 NVMe M.2 SSD 500 GB</span>
-        <h5>
-          CASE & MAINBOARD & POWER
-        </h5>
-        <span>ASRock DeskMini X300 120W</span>
-        <h5>
+        <h5 class="services-title">
           Running Services
         </h5>
         <span>None currently</span>
@@ -179,6 +177,47 @@ export default defineComponent({
   padding: 2px 10px;
   border-radius: 5px;
   border: 1px solid var(--border-color);
+}
+
+.os-title::before {
+  content: ''
+}
+
+.content h5 {
+  display: flex;
+  flex-direction: row;
+
+  align-items: center;
+}
+
+.content h5::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.os-title::before {
+  background-image: url('@/assets/cd.png');
+}
+
+.processor-title::before {
+  background-image: url('@/assets/processor.svg');
+}
+
+.memory-title::before {
+  background-image: url('@/assets/memory.png');
+}
+
+.ssd-title::before {
+  background-image: url('@/assets/ssd.svg');
+}
+
+.services-title::before {
+  background-image: url('@/assets/apps.svg');
 }
 
 </style>

@@ -3,7 +3,7 @@
     <div class="content">
       <h3>Hi there, I'm Kim, Hwan 👋</h3>
       <br/>
-      <div><strong>Software Developer</strong></div>
+      <div><strong>👨‍💻 Software Developer</strong></div>
       <br/>
       <div>I am always making something because I enjoy making things.</div>
     </div>
