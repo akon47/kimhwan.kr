@@ -82,7 +82,9 @@
         <h5 class="services-title">
           Running Services
         </h5>
-        <span>None currently</span>
+        <div class="services">
+          <div>Proxmox Backup Server</div>
+        </div>
       </div>
       <div class="images">
         <a href="https://user-images.githubusercontent.com/49547202/171973908-452a9e3c-5ef4-40a5-9e61-711bf829fd86.png"
