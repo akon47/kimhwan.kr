@@ -17,7 +17,7 @@
         OpenSource Projects
       </router-link>
       <router-link to="/server-info">
-        ServerInfo
+        Server Info
       </router-link>
       <router-link to="/about">
         About
