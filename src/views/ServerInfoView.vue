@@ -41,15 +41,13 @@
         <a href="https://user-images.githubusercontent.com/49547202/189513989-ffb8d70e-af79-429a-abeb-da6c6a4235c2.png"
            target="_blank">
           <img
-              src="https://user-images.githubusercontent.com/49547202/189513989-ffb8d70e-af79-429a-abeb-da6c6a4235c2.png"
-              width="200px"/>
+              src="https://user-images.githubusercontent.com/49547202/189513989-ffb8d70e-af79-429a-abeb-da6c6a4235c2.png"/>
         </a>
         <div>
           <a href="https://user-images.githubusercontent.com/49547202/189514036-82c4093b-e2f7-418a-97b6-7694490b404a.png"
              target="_blank">
             <img
-                src="https://user-images.githubusercontent.com/49547202/189514036-82c4093b-e2f7-418a-97b6-7694490b404a.png"
-                width="200px"/>
+                src="https://user-images.githubusercontent.com/49547202/189514036-82c4093b-e2f7-418a-97b6-7694490b404a.png"/>
           </a>
         </div>
       </div>
@@ -90,8 +88,7 @@
         <a href="https://user-images.githubusercontent.com/49547202/171973908-452a9e3c-5ef4-40a5-9e61-711bf829fd86.png"
            target="_blank">
           <img
-              src="https://user-images.githubusercontent.com/49547202/171973908-452a9e3c-5ef4-40a5-9e61-711bf829fd86.png"
-              width="200px"/>
+              src="https://user-images.githubusercontent.com/49547202/171973908-452a9e3c-5ef4-40a5-9e61-711bf829fd86.png"/>
         </a>
       </div>
     </div>
@@ -151,6 +148,10 @@ export default defineComponent({
   margin-left: 10px;
   padding-left: 10px;
   box-sizing: border-box;
+}
+
+.images img {
+  width: 200px;
 }
 
 @media (max-width: 720px) {
