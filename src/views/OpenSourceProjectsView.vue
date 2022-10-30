@@ -46,17 +46,17 @@ export default defineComponent({
           tags: ['HTML5', 'Canvas', 'JavaScript', 'NodeJS', 'WebSocket', 'Game'],
         },
         {
+          title: 'VisitCounter',
+          summary: 'The visit-counter project was created because I wanted to count the number of visitors to a specific page. There is an open source project called hits, but there is a problem that the hits value continuously increases when refreshed because there is no handling of duplicate IPs, so I created it myself.',
+          githubUrls: ['https://github.com/akon47/visit-counter'],
+          tags: ['NodeJS', 'MongoDB', 'Docker'],
+        },
+        {
           title: 'Screen Share',
           summary: 'This is a project where you can easily share your screen.',
           githubUrls: ['https://github.com/akon47/screen-share', 'https://github.com/akon47/screen-share-server'],
           demoUrl: 'https://screenshare.kimhwan.kr/',
           tags: ['Vue3', 'Spring Framework', 'WebSocket', 'WebRTC', 'MySQL', 'Docker', 'Jenkins'],
-        },
-        {
-          title: 'VisitCounter',
-          summary: 'The visit-counter project was created because I wanted to count the number of visitors to a specific page. There is an open source project called hits, but there is a problem that the hits value continuously increases when refreshed because there is no handling of duplicate IPs, so I created it myself.',
-          githubUrls: ['https://github.com/akon47/visit-counter'],
-          tags: ['NodeJS', 'MongoDB', 'Docker'],
         },
         {
           title: 'ScreenRecorder',
