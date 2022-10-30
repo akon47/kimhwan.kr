@@ -29,7 +29,7 @@ export default defineComponent({
           summary: 'Blog Service Frontend/Backend Project.',
           githubUrls: ['https://github.com/akon47/hwanstory', 'https://github.com/akon47/hwans-api-server'],
           demoUrl: 'https://blog.kimhwan.kr/',
-          tags: ['Vue3', 'Spring Framework', 'Docker', 'Docker-Compose', 'Jenkins'],
+          tags: ['Vue3', 'Spring Framework', 'Docker', 'MySQL', 'Redis', 'Jenkins', 'REST API'],
         },
         {
           title: 'Hwanscord',
@@ -44,6 +44,13 @@ export default defineComponent({
           githubUrls: ['https://github.com/akon47/shoot_game', 'https://github.com/akon47/shoot_game_server'],
           demoUrl: 'https://shootgame.kimhwan.kr/',
           tags: ['HTML5', 'Canvas', 'JavaScript', 'NodeJS', 'WebSocket', 'Game'],
+        },
+        {
+          title: 'Screen Share',
+          summary: 'This is a project where you can easily share your screen.',
+          githubUrls: ['https://github.com/akon47/screen-share', 'https://github.com/akon47/screen-share-server'],
+          demoUrl: 'https://screenshare.kimhwan.kr/',
+          tags: ['Vue3', 'Spring Framework', 'WebSocket', 'WebRTC', 'MySQL', 'Docker', 'Jenkins'],
         },
         {
           title: 'VisitCounter',
@@ -63,7 +70,7 @@ export default defineComponent({
           summary: 'A tone audio generation program that can be used in situations where testing of audio equipment or other constant audio signals are required.',
           githubUrls: ['https://github.com/akon47/ToneGenerator'],
           demoUrl: 'https://github.com/akon47/ToneGenerator/releases',
-          tags: ['C#', 'WPF'],
+          tags: ['C#', 'WPF', 'Audio'],
         },
         {
           title: 'SimpleTCP',

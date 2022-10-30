@@ -35,7 +35,6 @@
           <div><a href="https://github.com/akon47/visit-counter" target="_blank">VisitCounter</a></div>
           <div>Jenkins</div>
           <div>Postfix</div>
-          <div>Turn Server</div>
           <div>Nginx API Gateway</div>
         </div>
       </div>
