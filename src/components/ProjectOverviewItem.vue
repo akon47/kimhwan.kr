@@ -121,6 +121,12 @@ export default defineComponent({
   font-size: 14px;
 }
 
+.githubs > .github-item > a > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .github-item img {
   border-radius: 100%;
   width: 20px;
