@@ -36,6 +36,7 @@
           <div>Jenkins</div>
           <div>Postfix</div>
           <div>Nginx API Gateway</div>
+          <div>ELK-Stack</div>
         </div>
       </div>
       <div class="images">
