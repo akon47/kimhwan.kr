@@ -36,7 +36,7 @@
           <div>Jenkins</div>
           <div>Postfix</div>
           <div>Nginx API Gateway</div>
-          <div>ELK-Stack</div>
+          <div><a href="https://elk.kimhwan.kr/" target="_blank">ELK-Stack</a></div>
         </div>
       </div>
       <div class="images">
