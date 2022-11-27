@@ -64,7 +64,7 @@
         <h5 class="os-title">
           OS
         </h5>
-        <span>Proxmox Virtual Environment 7.7.3-3</span>
+        <span>Proxmox Virtual Environment 7.3-3</span>
         <br/>
         <span><del>Ubuntu Linux Server 20.04.4 LTS</del> ~ 2021.09</span>
         <h5 class="processor-title">
