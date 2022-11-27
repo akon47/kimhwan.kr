@@ -33,7 +33,7 @@
           <div><a href="https://shootgame.kimhwan.kr/" target="_blank">ShootGame</a></div>
           <div><a href="https://screenshare.kimhwan.kr/" target="_blank">SreenShare</a></div>
           <div><a href="https://github.com/akon47/visit-counter" target="_blank">VisitCounter</a></div>
-          <div>Jenkins</div>
+          <div><a href="https://build.kimhwan.kr/" target="_blank">Jenkins</a></div>
           <div>Postfix</div>
           <div>Nginx API Gateway</div>
           <div><a href="https://elk.kimhwan.kr/" target="_blank">ELK-Stack</a></div>
