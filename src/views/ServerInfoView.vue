@@ -3,7 +3,7 @@
     <div class="server-info">
       <div class="title">
         <h4>
-          📅 2022.09 ~ Present
+          📅 2022.09 ~ {{now}}
         </h4>
       </div>
       <div class="content">
@@ -57,7 +57,7 @@
     <div class="server-info">
       <div class="title">
         <h4>
-          📅 2021.04 ~ Present
+          📅 2021.04 ~ {{now}}
         </h4>
       </div>
       <div class="content">
@@ -66,7 +66,7 @@
         </h5>
         <span>Proxmox Virtual Environment 7.3-3</span>
         <br/>
-        <span><del>Ubuntu Linux Server 20.04.4 LTS</del> ~ 2021.09</span>
+        <span><del>Ubuntu Linux Server 20.04.4 LTS</del> ~ 2022.09</span>
         <h5 class="processor-title">
           CPU
         </h5>
@@ -79,6 +79,10 @@
           SSD
         </h5>
         <span>SAMSUNG 980 NVMe M.2 SSD 500 GB</span>
+        <br/>
+        <span>SAMSUNG 850 PRO 256 GB</span>
+        <br/>
+        <span>SAMSUNG 850 EVO 250 GB</span>
         <h5 class="services-title">
           Running Services
         </h5>
@@ -87,10 +91,8 @@
         </div>
       </div>
       <div class="images">
-        <a href="https://user-images.githubusercontent.com/49547202/171973908-452a9e3c-5ef4-40a5-9e61-711bf829fd86.png"
-           target="_blank">
-          <img
-              src="https://user-images.githubusercontent.com/49547202/171973908-452a9e3c-5ef4-40a5-9e61-711bf829fd86.png"/>
+        <a href="https://user-images.githubusercontent.com/49547202/171973908-452a9e3c-5ef4-40a5-9e61-711bf829fd86.png" target="_blank">
+          <img src="https://user-images.githubusercontent.com/49547202/171973908-452a9e3c-5ef4-40a5-9e61-711bf829fd86.png"/>
         </a>
       </div>
     </div>
@@ -99,9 +101,31 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import dayjs from 'dayjs';
 
 export default defineComponent({
   name: 'ServerInfoView',
+  data() {
+    return {
+      now: '',
+      timerId: undefined as number | undefined
+    }
+  },
+  methods: {
+    updateNow() {
+      this.now = dayjs(new Date()).format('YYYY.MM.DD HH:mm:ss');
+    }
+  },
+  mounted() {
+    this.updateNow();
+    this.timerId = setInterval(this.updateNow, 500);
+  },
+  unmounted() {
+    if(this.timerId) {
+      clearInterval(this.timerId);
+      this.timerId = undefined;
+    }
+  }
 });
 </script>
 
