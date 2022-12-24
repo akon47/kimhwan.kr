@@ -23,6 +23,10 @@
           SSD
         </h5>
         <span>SAMSUNG 980 NVMe M.2 SSD 1 TB</span>
+        <h5 class="ups-title">
+          UPS
+        </h5>
+        <span>APC BX1200MI-GR</span>
         <h5 class="services-title">
           Running Services
         </h5>
@@ -83,6 +87,10 @@
         <span>SAMSUNG 850 PRO 256 GB</span>
         <br/>
         <span>SAMSUNG 850 EVO 250 GB</span>
+        <h5 class="ups-title">
+          UPS
+        </h5>
+        <span>APC BX1200MI-GR</span>
         <h5 class="services-title">
           Running Services
         </h5>
@@ -243,6 +251,13 @@ export default defineComponent({
 
 .ssd-title::before {
   background-image: url('@/assets/ssd.svg');
+}
+
+.ups-title::before {
+  content: '🔋' !important;
+  margin-left: -2px !important;
+  margin-right: 7px !important;
+  height: auto !important;
 }
 
 .services-title::before {
