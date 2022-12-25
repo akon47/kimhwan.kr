@@ -50,10 +50,10 @@
               src="https://user-images.githubusercontent.com/49547202/189513989-ffb8d70e-af79-429a-abeb-da6c6a4235c2.png"/>
         </a>
         <div>
-          <a href="https://user-images.githubusercontent.com/49547202/189514036-82c4093b-e2f7-418a-97b6-7694490b404a.png"
+          <a href="https://user-images.githubusercontent.com/49547202/209468308-d43e9297-ed3d-4859-820a-d1a94fd5ff87.png"
              target="_blank">
             <img
-                src="https://user-images.githubusercontent.com/49547202/189514036-82c4093b-e2f7-418a-97b6-7694490b404a.png"/>
+                src="https://user-images.githubusercontent.com/49547202/209468308-d43e9297-ed3d-4859-820a-d1a94fd5ff87.png"/>
           </a>
         </div>
       </div>
