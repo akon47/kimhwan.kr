@@ -28,7 +28,7 @@ export default defineComponent({
           title: 'Hwan\'Story',
           summary: 'Blog Service Frontend/Backend Project.',
           githubUrls: ['https://github.com/akon47/hwanstory', 'https://github.com/akon47/hwans-api-server'],
-          demoUrl: 'https://blog.kimhwan.kr/',
+          demoUrl: 'https://hwanstory.kr/',
           tags: ['Vue3', 'Spring Framework', 'Docker', 'MySQL', 'Redis', 'Jenkins', 'REST API'],
         },
         {
