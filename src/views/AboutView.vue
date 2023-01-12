@@ -8,7 +8,7 @@
       <div>I am always making something because I enjoy making things.</div>
     </div>
     <div class="github-stat">
-      <img v-if="isDarkTheme" src="https://github-readme-stats-git-masterrstaa-rickstaa.vercel.app/api?username=akon47&show_icons=true&theme=dark />
+      <img v-if="isDarkTheme" src="https://github-readme-stats-git-masterrstaa-rickstaa.vercel.app/api?username=akon47&show_icons=true&theme=dark" />
       <img v-else src="https://github-readme-stats-git-masterrstaa-rickstaa.vercel.app/api?username=akon47&show_icons=true&theme=light" />
     </div>
     <div class="content">
