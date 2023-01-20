@@ -9,11 +9,11 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/',
-      redirect: '/main',
+      path: '/main',
+      redirect: '/',
     },
     {
-      path: '/main',
+      path: '/',
       name: 'Main',
       component: () => import('../views/MainView.vue'),
       meta: {
