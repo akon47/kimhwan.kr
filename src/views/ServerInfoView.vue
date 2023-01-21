@@ -19,10 +19,14 @@
           MEMORY
         </h5>
         <span>DDR4 16GB PC4-25600 x 2</span>
+        <br/>
+        <span>DDR4 32GB PC4-25600 x 2</span>
         <h5 class="ssd-title">
-          SSD
+          STORAGE
         </h5>
         <span>SAMSUNG 980 NVMe M.2 SSD 1 TB</span>
+        <br/>
+        <span>Western Digital HDD 8 TB</span>
         <h5 class="ups-title">
           UPS
         </h5>
@@ -50,10 +54,10 @@
               src="https://user-images.githubusercontent.com/49547202/189513989-ffb8d70e-af79-429a-abeb-da6c6a4235c2.png"/>
         </a>
         <div>
-          <a href="https://user-images.githubusercontent.com/49547202/209468308-d43e9297-ed3d-4859-820a-d1a94fd5ff87.png"
+          <a href="https://user-images.githubusercontent.com/49547202/213860127-a3647be9-e1b6-4633-8f08-7a3c9febeadb.png"
              target="_blank">
             <img
-                src="https://user-images.githubusercontent.com/49547202/209468308-d43e9297-ed3d-4859-820a-d1a94fd5ff87.png"/>
+                src="https://user-images.githubusercontent.com/49547202/213860127-a3647be9-e1b6-4633-8f08-7a3c9febeadb.png"/>
           </a>
         </div>
       </div>
@@ -80,7 +84,7 @@
         </h5>
         <span>DDR4 8GB PC4-25600 x 2</span>
         <h5 class="ssd-title">
-          SSD
+          STORAGE
         </h5>
         <span>SAMSUNG 980 NVMe M.2 SSD 500 GB</span>
         <br/>
