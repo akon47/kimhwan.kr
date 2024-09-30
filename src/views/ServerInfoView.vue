@@ -63,52 +63,6 @@
         </div>
       </div>
     </div>
-    <div class="server-info">
-      <div class="title">
-        <h4>
-          📅 2021.04 ~ {{now}}
-        </h4>
-      </div>
-      <div class="content">
-        <h5 class="os-title">
-          OS
-        </h5>
-        <span>Proxmox Virtual Environment 7.4</span>
-        <br/>
-        <span><del>Ubuntu Linux Server 20.04.4 LTS</del> ~ 2022.09</span>
-        <h5 class="processor-title">
-          CPU
-        </h5>
-        <span>AMD Ryzen 3 PRO 4350G</span>
-        <h5 class="memory-title">
-          MEMORY
-        </h5>
-        <span>DDR4 8GB PC4-25600 x 2</span>
-        <h5 class="ssd-title">
-          STORAGE
-        </h5>
-        <span>SAMSUNG 980 NVMe M.2 SSD 500 GB</span>
-        <br/>
-        <span>SAMSUNG 850 PRO 256 GB</span>
-        <br/>
-        <span>SAMSUNG 850 EVO 250 GB</span>
-        <h5 class="ups-title">
-          UPS
-        </h5>
-        <span>APC BX1200MI-GR</span>
-        <h5 class="services-title">
-          Running Services
-        </h5>
-        <div class="services">
-          <div>Proxmox Backup Server</div>
-        </div>
-      </div>
-      <div class="images">
-        <a href="https://user-images.githubusercontent.com/49547202/171973908-452a9e3c-5ef4-40a5-9e61-711bf829fd86.png" target="_blank">
-          <img src="https://user-images.githubusercontent.com/49547202/171973908-452a9e3c-5ef4-40a5-9e61-711bf829fd86.png"/>
-        </a>
-      </div>
-    </div>
   </div>
 </template>
 
