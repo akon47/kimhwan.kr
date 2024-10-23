@@ -45,7 +45,6 @@
           <div>Postfix</div>
           <div>Nginx API Gateway</div>
           <div><a href="https://elk.kimhwan.kr/" target="_blank">ELK-Stack</a></div>
-          <div><a href="https://nas.kimhwan.kr/" target="_blank">TrueNas</a></div>
         </div>
       </div>
       <div class="images">

@@ -30,6 +30,11 @@ export default defineComponent({
           summary: 'Information about the server used to operate the current site and various other services.',
           to: '/server-info',
         },
+        {
+          title: '👨‍💻 About Me',
+          summary: 'about me?',
+          to: '/about',
+        },
       ] as Array<MenuOverview>,
     };
   },
