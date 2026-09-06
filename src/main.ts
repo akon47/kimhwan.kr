@@ -1,6 +1,8 @@
-import { createApp } from 'vue'
-import App from './App.vue'
-import router from './routes';
-import store from './store';
+import { createApp } from 'vue';
+import App from './App.vue';
+import router from './router';
 
-createApp(App).use(router).use(store).mount('#app')
+import '@/css/reset.css';
+import '@/css/common.css';
+
+createApp(App).use(router).mount('#app');

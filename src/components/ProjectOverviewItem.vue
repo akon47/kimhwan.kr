@@ -1,61 +1,41 @@
 <template>
   <div class="overview-container">
     <div class="title">
-      <a :href="demoUrl ? demoUrl : githubUrls[0]" target="_blank">{{ title }}</a>
+      <a :href="project.demoUrl ?? project.githubUrls[0]" target="_blank">{{ project.title }}</a>
     </div>
     <div class="summary">
-      {{ summary }}
+      {{ project.summary }}
     </div>
     <div class="githubs">
-      <div class="github-item" v-for="githubUrl in githubUrls" :key="githubUrl">
+      <div class="github-item" v-for="githubUrl in project.githubUrls" :key="githubUrl">
         <a :href="githubUrl" target="_blank">
-          <img :src="githubIconSrc"/>
+          <img :src="githubIconSrc" alt="GitHub"/>
           <span>{{ githubUrl }}</span>
         </a>
       </div>
     </div>
     <div class="tags">
-      <div class="tag-item" v-for="tag in tags" :key="tag">
+      <div class="tag-item" v-for="tag in project.tags" :key="tag">
         {{ tag }}
       </div>
     </div>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-import store from '@/store';
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useTheme } from '@/composables/useTheme';
+import type { Project } from '@/data/projects';
+import githubDarkIcon from '@/assets/github-dark.svg';
+import githubLightIcon from '@/assets/github-light.svg';
 
-export default defineComponent({
-  name: 'ProjectOverviewItem',
-  props: {
-    title: {
-      type: String,
-    },
-    summary: {
-      type: String,
-    },
-    githubUrls: {
-      type: Array,
-    },
-    demoUrl: {
-      type: String,
-      required: false,
-    },
-    tags: {
-      type: Array,
-    },
-  },
-  computed: {
-    githubIconSrc() {
-      if (store.getters['commonStore/isDarkTheme']) {
-        return require('@/assets/github-dark.svg');
-      } else {
-        return require('@/assets/github-light.svg');
-      }
-    },
-  },
-});
+defineProps<{
+  project: Project;
+}>();
+
+const { isDarkTheme } = useTheme();
+
+const githubIconSrc = computed(() => (isDarkTheme.value ? githubDarkIcon : githubLightIcon));
 </script>
 
 <style scoped>

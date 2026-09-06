@@ -1,34 +1,23 @@
 <template>
   <div class="overview-container">
     <div class="title">
-      {{ title }}
+      {{ menu.title }}
     </div>
     <div class="summary">
-      {{ summary }}
+      {{ menu.summary }}
     </div>
-    <router-link :to="{ path: to }">
+    <router-link :to="menu.to">
       <button>Read More</button>
     </router-link>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
+import type { Menu } from '@/data/menus';
 
-export default defineComponent({
-  name: 'MenuOverviewItem',
-  props: {
-    title: {
-      type: String,
-    },
-    summary: {
-      type: String,
-    },
-    to: {
-      type: String,
-    },
-  },
-});
+defineProps<{
+  menu: Menu;
+}>();
 </script>
 
 <style scoped>

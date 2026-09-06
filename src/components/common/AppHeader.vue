@@ -37,23 +37,10 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-import store from '@/store';
+<script setup lang="ts">
+import { useTheme } from '@/composables/useTheme';
 
-export default defineComponent({
-  name: 'AppHeader',
-  computed: {
-    isDarkTheme(): boolean {
-      return store.getters['commonStore/isDarkTheme'] ?? false;
-    },
-  },
-  methods: {
-    toggleTheme() {
-      store.dispatch('commonStore/toggleTheme');
-    },
-  },
-});
+const { isDarkTheme, toggleTheme } = useTheme();
 </script>
 
 <style scoped>
@@ -154,7 +141,7 @@ export default defineComponent({
 }
 
 .switch {
-  background-image: url(@/assets/light-mode.svg);
+  background-image: url('@/assets/light-mode.svg');
   background-size: 25px 25px;
   background-position: center;
   background-repeat: no-repeat;
@@ -168,7 +155,7 @@ export default defineComponent({
 }
 
 .themes input:checked + .switch {
-  background-image: url(@/assets/dark-mode.svg);
+  background-image: url('@/assets/dark-mode.svg');
   transform: rotate(0deg);
 }
 

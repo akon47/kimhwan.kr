@@ -2,38 +2,26 @@
   <div class="footer-container">
     <div class="socials">
       <a href="https://github.com/akon47" target="_blank" :style="{ background: '#272e33' }">
-        <img src="@/assets/github.svg"/>
+        <img src="@/assets/github.svg" alt="GitHub"/>
       </a>
       <a href="https://www.linkedin.com/in/hwankim92/" target="_blank" :style="{ background: '#0073b1' }">
-        <img src="@/assets/linkedin.svg"/>
+        <img src="@/assets/linkedin.svg" alt="LinkedIn"/>
       </a>
       <a href="mailto:akon47@naver.com" target="_blank" :style="{ background: '#b2e3ff' }">
-        <img src="@/assets/mail.svg"/>
-      </a>
-      <a href="https://stats.uptimerobot.com/2owrXSVNLl" target="_blank" :style="{ background: '#3bd771' }">
-        <img src="@/assets/uptimerobot.svg"/>
+        <img src="@/assets/mail.svg" alt="Mail"/>
       </a>
     </div>
     <div class="metas">
       <span>Copyright © 2022 - {{ currentYear }}. 김환(Kim,Hwan) all rights reserved.</span>
       <div class="counter">
-        <img src="https://counter.kimhwan.kr?key=kimhwan.kr" />
+        <img src="https://counter.kimhwan.kr?key=kimhwan.kr" alt="Visitors"/>
       </div>
     </div>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-
-export default defineComponent({
-  name: 'AppFooter',
-  computed: {
-    currentYear(): number {
-      return new Date().getFullYear();
-    },
-  },
-});
+<script setup lang="ts">
+const currentYear = new Date().getFullYear();
 </script>
 
 <style scoped>

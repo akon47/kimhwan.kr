@@ -1,44 +1,12 @@
 <template>
   <div class="main-container">
-    <menu-overview-item v-for="item in items" :key="item.title" :title="item.title" :summary="item.summary" :to="item.to"/>
+    <MenuOverviewItem v-for="menu in menus" :key="menu.to" :menu="menu"/>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
 import MenuOverviewItem from '@/components/MenuOverviewItem.vue';
-
-interface MenuOverview {
-  readonly title: String,
-  readonly summary: String,
-  readonly to: String,
-}
-
-export default defineComponent({
-  name: 'MainView',
-  components: { MenuOverviewItem },
-  data() {
-    return {
-      items: [
-        {
-          title: '🚀 OpenSource Projects',
-          summary: 'These are several projects that I personally developed and published on GitHub.',
-          to: '/opensource-projects',
-        },
-        {
-          title: '🖥︎ Server Info',
-          summary: 'Information about the server used to operate the current site and various other services.',
-          to: '/server-info',
-        },
-        {
-          title: '👨‍💻 About Me',
-          summary: 'about me?',
-          to: '/about',
-        },
-      ] as Array<MenuOverview>,
-    };
-  },
-});
+import { menus } from '@/data/menus';
 </script>
 
 <style scoped>

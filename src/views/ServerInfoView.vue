@@ -3,61 +3,33 @@
     <div class="server-info">
       <div class="title">
         <h4>
-          📅 2022.09 ~ {{now}}
+          📅 {{ serverSince }} ~ {{ now }}
         </h4>
       </div>
       <div class="content">
-        <h5 class="os-title">
-          OS
-        </h5>
-        <span>Proxmox Virtual Environment 7.4</span>
-        <h5 class="processor-title">
-          CPU
-        </h5>
-        <span>INTEL Core i5-12400</span>
-        <h5 class="memory-title">
-          MEMORY
-        </h5>
-        <span>DDR4 16GB PC4-25600 x 2</span>
-        <br/>
-        <span>DDR4 32GB PC4-25600 x 2</span>
-        <h5 class="ssd-title">
-          STORAGE
-        </h5>
-        <span>SAMSUNG 980 NVMe M.2 SSD 1 TB</span>
-        <br/>
-        <span>Western Digital HDD 8 TB</span>
-        <h5 class="ups-title">
-          UPS
-        </h5>
-        <span>APC BX1200MI-GR</span>
+        <template v-for="spec in serverSpecs" :key="spec.key">
+          <h5 :class="`${spec.key}-title`">
+            {{ spec.title }}
+          </h5>
+          <template v-for="(line, index) in spec.lines" :key="line">
+            <br v-if="index > 0"/>
+            <span>{{ line }}</span>
+          </template>
+        </template>
         <h5 class="services-title">
           Running Services
         </h5>
         <div class="services">
-          <div><a href="https://kimhwan.kr/" target="_blank">Kimhwan.kr</a></div>
-          <div><a href="https://blog.kimhwan.kr/" target="_blank">Hwan'Story</a></div>
-          <div><a href="https://hwanscord.kimhwan.kr/" target="_blank">Hwanscord</a></div>
-          <div><a href="https://shootgame.kimhwan.kr/" target="_blank">ShootGame</a></div>
-          <div><a href="https://screenshare.kimhwan.kr/" target="_blank">ScreenShare</a></div>
-          <div><a href="https://github.com/akon47/visit-counter" target="_blank">VisitCounter</a></div>
-          <div><a href="https://build.kimhwan.kr/" target="_blank">Jenkins</a></div>
-          <div>Postfix</div>
-          <div>Nginx API Gateway</div>
-          <div><a href="https://elk.kimhwan.kr/" target="_blank">ELK-Stack</a></div>
+          <div v-for="service in services" :key="service.name">
+            <a v-if="service.url" :href="service.url" target="_blank">{{ service.name }}</a>
+            <template v-else>{{ service.name }}</template>
+          </div>
         </div>
       </div>
       <div class="images">
-        <a href="https://user-images.githubusercontent.com/49547202/189513989-ffb8d70e-af79-429a-abeb-da6c6a4235c2.png"
-           target="_blank">
-          <img
-              src="https://user-images.githubusercontent.com/49547202/189513989-ffb8d70e-af79-429a-abeb-da6c6a4235c2.png"/>
-        </a>
-        <div>
-          <a href="https://user-images.githubusercontent.com/49547202/213860127-a3647be9-e1b6-4633-8f08-7a3c9febeadb.png"
-             target="_blank">
-            <img
-                src="https://user-images.githubusercontent.com/49547202/213860127-a3647be9-e1b6-4633-8f08-7a3c9febeadb.png"/>
+        <div v-for="photo in serverPhotos" :key="photo">
+          <a :href="photo" target="_blank">
+            <img :src="photo" alt="Server photo"/>
           </a>
         </div>
       </div>
@@ -65,32 +37,33 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-import dayjs from 'dayjs';
+<script setup lang="ts">
+import { onMounted, onUnmounted, ref } from 'vue';
+import { serverPhotos, serverSince, serverSpecs, services } from '@/data/server';
 
-export default defineComponent({
-  name: 'ServerInfoView',
-  data() {
-    return {
-      now: '',
-      timerId: undefined as number | undefined
-    }
-  },
-  methods: {
-    updateNow() {
-      this.now = dayjs(new Date()).format('YYYY.MM.DD HH:mm:ss');
-    }
-  },
-  mounted() {
-    this.updateNow();
-    this.timerId = setInterval(this.updateNow, 500);
-  },
-  unmounted() {
-    if(this.timerId) {
-      clearInterval(this.timerId);
-      this.timerId = undefined;
-    }
+const now = ref('');
+let timerId: number | undefined;
+
+function formatDateTime(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const ymd = `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
+  const hms = `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  return `${ymd} ${hms}`;
+}
+
+function updateNow() {
+  now.value = formatDateTime(new Date());
+}
+
+onMounted(() => {
+  updateNow();
+  timerId = window.setInterval(updateNow, 500);
+});
+
+onUnmounted(() => {
+  if (timerId !== undefined) {
+    window.clearInterval(timerId);
+    timerId = undefined;
   }
 });
 </script>
@@ -172,10 +145,6 @@ export default defineComponent({
   padding: 2px 10px;
   border-radius: 5px;
   border: 1px solid var(--border-color);
-}
-
-.os-title::before {
-  content: ''
 }
 
 .content h5 {

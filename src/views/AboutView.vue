@@ -8,24 +8,20 @@
       <div>I am always making something because I enjoy making things.</div>
     </div>
     <div class="github-stat">
-      <img v-if="isDarkTheme" src="https://github-readme-stats.vercel.app/api?username=akon47&show_icons=true&theme=dark" />
-      <img v-else src="https://github-readme-stats.vercel.app/api?username=akon47&show_icons=true&theme=light" />
+      <img :src="githubStatsSrc" alt="GitHub stats"/>
     </div>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue';
-import store from '@/store';
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useTheme } from '@/composables/useTheme';
 
-export default defineComponent({
-  name: 'AboutView',
-  computed: {
-    isDarkTheme() {
-      return store.getters['commonStore/isDarkTheme'];
-    }
-  },
-});
+const { isDarkTheme } = useTheme();
+
+const githubStatsSrc = computed(
+  () => `https://github-readme-stats.vercel.app/api?username=akon47&show_icons=true&theme=${isDarkTheme.value ? 'dark' : 'light'}`,
+);
 </script>
 
 <style scoped>
