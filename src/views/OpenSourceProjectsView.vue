@@ -1,6 +1,6 @@
 <template>
   <div class="projects-container">
-    <project-overview-item v-for="item in items" :key="item.githubUrl"
+    <project-overview-item v-for="item in items" :key="item.title"
                            :title="item.title" :summary="item.summary" :githubUrls="item.githubUrls"
                            :demoUrl="item.demoUrl" :tags="item.tags"/>
   </div>
@@ -24,6 +24,34 @@ export default defineComponent({
   data() {
     return {
       items: [
+        {
+          title: 'Tessera',
+          summary: 'A browser-based 3D multiplayer voxel survival game. Spawn into a shared open world, mine, craft, build, and survive the night together. A Windows desktop app that connects to the same server is also available.',
+          githubUrls: ['https://github.com/akon47/tessera-releases'],
+          demoUrl: 'https://tessera.kimhwan.kr/',
+          tags: ['Three.js', 'WebGL', 'Electron', 'Multiplayer', 'Voxel', 'Game'],
+        },
+        {
+          title: 'Claude Account Switcher',
+          summary: 'A Windows system-tray app that switches between multiple Claude Code (CLI) accounts with one click and runs them concurrently in isolated sessions. Supports 14 UI languages and ships with an auto-updating installer, also available via winget.',
+          githubUrls: ['https://github.com/akon47/claude-account-switcher-windows'],
+          demoUrl: 'https://github.com/akon47/claude-account-switcher-windows/releases/latest',
+          tags: ['C#', 'WPF', '.NET 9', 'Claude Code', 'System Tray', 'winget'],
+        },
+        {
+          title: 'NvChat',
+          summary: 'A Windows desktop app to chat with the free LLMs on build.nvidia.com. Streaming chat, saved conversations, live markdown/code rendering, reasoning display, image attachments and in-app auto-update, shipped as a single .exe.',
+          githubUrls: ['https://github.com/akon47/NvChat'],
+          demoUrl: 'https://github.com/akon47/NvChat/releases/latest',
+          tags: ['C#', 'WPF', '.NET 8', 'LLM', 'NVIDIA NIM'],
+        },
+        {
+          title: 'NetThrottle',
+          summary: 'A Windows desktop app that rate-limits per-process network bandwidth, with separate download and upload caps for each application. Traffic is shaped at the network layer using WinDivert, delaying packets instead of dropping them.',
+          githubUrls: ['https://github.com/akon47/NetThrottle'],
+          demoUrl: 'https://github.com/akon47/NetThrottle/releases/latest',
+          tags: ['C#', 'WPF', '.NET 9', 'WinDivert', 'Network'],
+        },
         {
           title: 'Hwan\'Story',
           summary: 'Blog Service Frontend/Backend Project.',
@@ -60,7 +88,7 @@ export default defineComponent({
         },
         {
           title: 'ScreenRecorder',
-          summary: 'It is a simple recording program with the ability to record the screen.',
+          summary: 'A simple recording program with the ability to record screens and audio on your computer. Supports H.264/H.265 hardware encoding (NVENC, QuickSync), region/window/display capture and hotkeys.',
           githubUrls: ['https://github.com/akon47/ScreenRecorder'],
           demoUrl: 'https://github.com/akon47/ScreenRecorder/releases/',
           tags: ['C#', 'WPF', 'FFMPEG', 'DirectX'],

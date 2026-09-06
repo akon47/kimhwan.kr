@@ -40,7 +40,7 @@ export default defineComponent({
     },
     demoUrl: {
       type: String,
-      require: false,
+      required: false,
     },
     tags: {
       type: Array,

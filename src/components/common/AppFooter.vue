@@ -15,7 +15,7 @@
       </a>
     </div>
     <div class="metas">
-      <span>Copyright © 2022. 김환(Kim,Hwan) all rights reserved.</span>
+      <span>Copyright © 2022 - {{ currentYear }}. 김환(Kim,Hwan) all rights reserved.</span>
       <div class="counter">
         <img src="https://counter.kimhwan.kr?key=kimhwan.kr" />
       </div>
@@ -28,6 +28,11 @@ import { defineComponent } from 'vue';
 
 export default defineComponent({
   name: 'AppFooter',
+  computed: {
+    currentYear(): number {
+      return new Date().getFullYear();
+    },
+  },
 });
 </script>
 
