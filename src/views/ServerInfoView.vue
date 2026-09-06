@@ -40,7 +40,6 @@
           <div><a href="https://hwanscord.kimhwan.kr/" target="_blank">Hwanscord</a></div>
           <div><a href="https://shootgame.kimhwan.kr/" target="_blank">ShootGame</a></div>
           <div><a href="https://screenshare.kimhwan.kr/" target="_blank">ScreenShare</a></div>
-          <div><a href="https://tessera.kimhwan.kr/" target="_blank">Tessera</a></div>
           <div><a href="https://github.com/akon47/visit-counter" target="_blank">VisitCounter</a></div>
           <div><a href="https://build.kimhwan.kr/" target="_blank">Jenkins</a></div>
           <div>Postfix</div>

@@ -25,13 +25,6 @@ export default defineComponent({
     return {
       items: [
         {
-          title: 'Tessera',
-          summary: 'A browser-based 3D multiplayer voxel survival game. Spawn into a shared open world, mine, craft, build, and survive the night together. A Windows desktop app that connects to the same server is also available.',
-          githubUrls: ['https://github.com/akon47/tessera-releases'],
-          demoUrl: 'https://tessera.kimhwan.kr/',
-          tags: ['Three.js', 'WebGL', 'Electron', 'Multiplayer', 'Voxel', 'Game'],
-        },
-        {
           title: 'Claude Account Switcher',
           summary: 'A Windows system-tray app that switches between multiple Claude Code (CLI) accounts with one click and runs them concurrently in isolated sessions. Supports 14 UI languages and ships with an auto-updating installer, also available via winget.',
           githubUrls: ['https://github.com/akon47/claude-account-switcher-windows'],
