@@ -35,7 +35,7 @@
 
       <g class="edge-labels">
         <text v-for="e in visibleEdges.filter((x) => x.label)" :key="`l-${e.id}`" :x="e.lx" :y="e.ly" :text-anchor="e.anchor" class="edge-label">
-          {{ e.label }}
+          <tspan v-for="(line, i) in labelLines(e.label)" :key="i" :x="e.lx" :dy="i === 0 ? 0 : 13">{{ line }}</tspan>
         </text>
       </g>
 
@@ -171,6 +171,18 @@ function trafficLabel(r: number, out: number, inb: number): string | undefined {
   return `${fmtRate(r)} · ↑${fmtBps(out)} ↓${fmtBps(inb)}`;
 }
 
+/** Edge label in two lines (rate above, bytes below) so it fits the gaps between nodes. */
+function trafficLines(r: number, out: number, inb: number, prefix = ''): string | undefined {
+  if (r <= 0) {
+    return undefined;
+  }
+  return `${prefix}${fmtRate(r)}\n↑${fmtBps(out)} ↓${fmtBps(inb)}`;
+}
+
+function labelLines(label?: string): string[] {
+  return label ? label.split('\n') : [];
+}
+
 /** Wide: two service columns right of the gateway; power row on top; GitHub/Docker Hub bottom-left. */
 const WIDE: Layout = {
   w: 1340,
@@ -202,8 +214,8 @@ const NARROW: Layout = (() => {
   const nx = 40;
   const nw = 370;
   const step = 64;
-  const homeY = 176;
-  const appsTop = 480;
+  const homeY = 186;
+  const appsTop = 490;
   const platformTop = appsTop + APP_ORDER.length * step + 40;
   const bottom = platformTop + (PLATFORM_ORDER.length - 1) * step + NODE_H + 16;
   return {
@@ -216,11 +228,11 @@ const NARROW: Layout = (() => {
     ],
     pos: {
       visitor: { x: nx, y: 20, w: nw },
-      cloudflare: { x: nx, y: 96, w: nw },
-      power: { x: nx, y: 224, w: 140 },
-      ups: { x: 200, y: 224, w: 210 },
-      host: { x: nx, y: 302, w: nw },
-      gateway: { x: nx, y: 376, w: nw },
+      cloudflare: { x: nx, y: 106, w: nw },
+      power: { x: nx, y: 234, w: 140 },
+      ups: { x: 200, y: 234, w: 210 },
+      host: { x: nx, y: 312, w: nw },
+      gateway: { x: nx, y: 386, w: nw },
     },
     apps: { x: 80, w: 330, top: appsTop, step },
     platform: { x: 80, w: 330, top: platformTop, step },
@@ -366,10 +378,10 @@ const edges = computed<FlowEdge[]>(() => {
 
   if (!narrow.value) {
     const midY = gw.y + gw.h / 2;
-    out.push({ id: 'v-cf', d: curveLR(visitor, cf), kind: 'traffic', active: proxied > 0, dead: false, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare 경유 ${fmtRate(proxied)}`, label: trafficLabel(proxied, proxiedOut, proxiedIn), lx: (visitor.x + visitor.w + cf.x) / 2, ly: midY - 12, anchor: 'middle' });
-    out.push({ id: 'cf-gw', d: curveLR(cf, gw), kind: 'traffic', active: proxied > 0 && gwUp, dead: !gwUp, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare → 관문 ${fmtRate(proxied)}`, label: trafficLabel(proxied, proxiedOut, proxiedIn), lx: (cf.x + cf.w + gw.x) / 2, ly: midY - 12, anchor: 'middle' });
+    out.push({ id: 'v-cf', d: curveLR(visitor, cf), kind: 'traffic', active: proxied > 0, dead: false, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare 경유 ${fmtRate(proxied)}`, label: trafficLines(proxied, proxiedOut, proxiedIn), lx: (visitor.x + visitor.w + cf.x) / 2, ly: midY - 22, anchor: 'middle' });
+    out.push({ id: 'cf-gw', d: curveLR(cf, gw), kind: 'traffic', active: proxied > 0 && gwUp, dead: !gwUp, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare → 관문 ${fmtRate(proxied)}`, label: trafficLines(proxied, proxiedOut, proxiedIn), lx: (cf.x + cf.w + gw.x) / 2, ly: midY - 22, anchor: 'middle' });
     const vx = visitor.x + visitor.w / 2;
-    out.push({ id: 'v-gw', d: `M ${vx} ${visitor.y} C ${vx} 270, ${gw.x + 40} 270, ${gw.x + 40} ${gw.y}`, kind: 'traffic', active: direct > 0 && gwUp, dead: !gwUp, width: widthFor(direct), duration: durationFor(direct), title: `직결 (Cloudflare 를 거치지 않는 NAS·Proxmox·메일·VPN) ${fmtRate(direct)}`, label: direct > 0 ? `직결 ${trafficLabel(direct, directOut, directIn)}` : undefined, lx: (vx + gw.x + 40) / 2, ly: 276, anchor: 'middle' });
+    out.push({ id: 'v-gw', d: `M ${vx} ${visitor.y} C ${vx} 270, ${gw.x + 40} 270, ${gw.x + 40} ${gw.y}`, kind: 'traffic', active: direct > 0 && gwUp, dead: !gwUp, width: widthFor(direct), duration: durationFor(direct), title: `직결 (Cloudflare 를 거치지 않는 NAS·Proxmox·메일·VPN) ${fmtRate(direct)}`, label: trafficLines(direct, directOut, directIn, '직결 '), lx: (vx + gw.x + 40) / 2, ly: 266, anchor: 'middle' });
     if (lastApp && lastPlatform) {
       out.push({ id: 'gw-trunk', d: `M ${gw.x + gw.w} ${midY} L ${lay.trunk1} ${midY}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(total) + 1, duration: '1s', title: `관문 → 내부 서비스 ${fmtRate(total)}` });
       out.push({ id: 'trunk1', d: `M ${lay.trunk1} ${lay.busY} L ${lay.trunk1} ${lastApp.y + lastApp.h / 2}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(total) + 1, duration: '1s', title: '서비스 간선' });
@@ -380,8 +392,8 @@ const edges = computed<FlowEdge[]>(() => {
     platform.forEach((t) => branch(out, t, lay.trunk2, gwUp));
   } else {
     const cx = visitor.x + visitor.w / 2;
-    const labelY = visitor.y + visitor.h + 15;
-    out.push({ id: 'v-cf', d: lineTB(visitor, cf), kind: 'traffic', active: proxied > 0, dead: false, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare 경유 ${fmtRate(proxied)}`, label: trafficLabel(proxied, proxiedOut, proxiedIn), lx: cx + 10, ly: labelY, anchor: 'start' });
+    const labelY = visitor.y + visitor.h + 13;
+    out.push({ id: 'v-cf', d: lineTB(visitor, cf), kind: 'traffic', active: proxied > 0, dead: false, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare 경유 ${fmtRate(proxied)}`, label: trafficLines(proxied, proxiedOut, proxiedIn), lx: cx + 10, ly: labelY, anchor: 'start' });
     const rx = cf.x + cf.w;
     const cy = cf.y + cf.h / 2;
     const gy = gw.y + gw.h / 2;
@@ -563,7 +575,7 @@ function labelOf(h: Health): string {
 @keyframes flow20 { to { stroke-dashoffset: -40; } }
 
 .edge-label {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 500;
   fill: var(--base-color);
   opacity: 0.85;
@@ -614,7 +626,7 @@ function labelOf(h: Health): string {
 
 .flow-svg.narrow .node-title { font-size: 16px; }
 .flow-svg.narrow .node-sub { font-size: 12.5px; }
-.flow-svg.narrow .edge-label { font-size: 11.5px; }
+.flow-svg.narrow .edge-label { font-size: 12.5px; }
 
 .sw {
   display: inline-block;
