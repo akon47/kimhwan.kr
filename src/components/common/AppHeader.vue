@@ -13,26 +13,20 @@
         <input id="theme-button" type="checkbox" :checked="isDarkTheme" @change="toggleTheme"/>
         <label class="switch" for="theme-button"/>
       </div>
-      <router-link to="/status">
-        Live Status
-      </router-link>
       <router-link to="/opensource-projects">
         OpenSource Projects
       </router-link>
-      <router-link to="/server-info">
-        Server Info
+      <router-link to="/status">
+        Server Status
       </router-link>
       <router-link to="/about">
         About
       </router-link>
       <div class="icon-menus">
-        <router-link to="/status">
-          📡
-        </router-link>
         <router-link to="/opensource-projects">
           🚀
         </router-link>
-        <router-link to="/server-info">
+        <router-link to="/status">
           🖥
         </router-link>
         <router-link to="/about">

@@ -3,6 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 declare module 'vue-router' {
   interface RouteMeta {
     title?: string;
+    /** Use the wider content column (dashboard pages). */
+    wide?: boolean;
   }
 }
 
@@ -34,16 +36,13 @@ const router = createRouter({
       name: 'Status',
       component: () => import('@/views/StatusView.vue'),
       meta: {
-        title: '📡 Live Status',
+        title: '🖥︎ Server Status',
+        wide: true,
       },
     },
     {
       path: '/server-info',
-      name: 'ServerInfo',
-      component: () => import('@/views/ServerInfoView.vue'),
-      meta: {
-        title: '🖥︎ Server Info',
-      },
+      redirect: '/status',
     },
     {
       path: '/opensource-projects',

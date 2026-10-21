@@ -90,6 +90,9 @@ export interface TrafficSummary {
   readonly total: number;
   readonly byVhost: Record<string, number>;
   readonly byService: Record<string, number>;
+  /** Response bytes in the window (older API versions omit these). */
+  readonly bytesByVhost?: Record<string, number>;
+  readonly bytesByService?: Record<string, number>;
 }
 
 export interface StatusSnapshot {

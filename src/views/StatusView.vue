@@ -26,7 +26,7 @@
 
     <!-- flow map -->
     <section v-if="data" class="block">
-      <h4 class="block-title">🔀 흐름 <small>트래픽 · 전원 · 배포 · 로그가 지금 어디로 흐르는지</small></h4>
+      <h4 class="block-title">🔀 흐름도 <small>트래픽 · 전원 · 배포 · 로그가 지금 어디로 흐르는지</small></h4>
       <FlowMap :data="data"/>
     </section>
 
@@ -124,16 +124,28 @@
       <h4 class="block-title">📦 가상 머신 · 컨테이너 <small>{{ runningGuests }} / {{ data.guests.length }} 실행 중</small></h4>
       <div class="guests">
         <div v-for="g in data.guests" :key="g.vmid" class="guest" :class="g.status">
-          <span class="dot" :class="g.status === 'running' ? 'up' : 'off'"/>
-          <span class="guest-id">{{ g.vmid }}</span>
-          <span class="guest-name">{{ g.name }}</span>
-          <span class="guest-type">{{ g.type === 'qemu' ? 'VM' : 'LXC' }}</span>
-          <template v-if="g.status === 'running'">
-            <span class="guest-metric">CPU {{ g.cpuPct.toFixed(1) }}%</span>
-            <span class="guest-metric">RAM {{ gb(g.mem) }} / {{ gb(g.maxmem) }} GB</span>
-            <span class="guest-metric">{{ uptimeShort(g.uptimeSec) }}</span>
-          </template>
-          <span v-else class="guest-metric">정지</span>
+          <div class="guest-head">
+            <span class="dot" :class="g.status === 'running' ? 'up' : 'off'"/>
+            <span class="guest-name">{{ g.name }}</span>
+            <span class="guest-type">{{ g.type === 'qemu' ? 'VM' : 'LXC' }}</span>
+            <span class="guest-id">#{{ g.vmid }}</span>
+          </div>
+          <div v-if="g.status === 'running'" class="guest-metrics">
+            <span class="metric">
+              <span class="metric-label">CPU</span>
+              <span class="mini-bar"><span :style="barStyle(g.cpuPct)"/></span>
+              <span class="metric-value">{{ g.cpuPct.toFixed(1) }}%</span>
+            </span>
+            <span class="metric">
+              <span class="metric-label">RAM</span>
+              <span class="mini-bar"><span :style="barStyle(pct(g.mem, g.maxmem))"/></span>
+              <span class="metric-value">{{ gb(g.mem) }} / {{ gb(g.maxmem) }} GB</span>
+            </span>
+            <span class="metric uptime">⏱ {{ uptimeShort(g.uptimeSec) }}</span>
+          </div>
+          <div v-else class="guest-metrics">
+            <span class="metric">정지됨</span>
+          </div>
         </div>
       </div>
     </section>
@@ -495,49 +507,93 @@ function checkTitle(c: CheckResult): string {
 /* ----- guests ----- */
 .guests {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 6px 12px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
 }
 
 .guest {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+  display: grid;
+  row-gap: 8px;
+  padding: 12px 14px;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: 10px;
+  min-width: 0;
 }
 
 .guest.stopped {
   opacity: 0.55;
 }
 
-.guest-id {
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  opacity: 0.6;
-  width: 30px;
+.guest-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .guest-name {
   font-weight: bold;
-  flex: 1;
+  font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .guest-type {
   font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
   background: var(--menu-hover-color);
+  flex-shrink: 0;
 }
 
-.guest-metric {
+.guest-id {
+  margin-left: auto;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.guest-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
   font-size: 12px;
-  opacity: 0.75;
+  opacity: 0.85;
+}
+
+.metric {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   white-space: nowrap;
+}
+
+.metric-label {
+  font-size: 10.5px;
+  opacity: 0.6;
+  letter-spacing: 0.04em;
+}
+
+.mini-bar {
+  display: inline-block;
+  width: 46px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--menu-hover-color);
+  overflow: hidden;
+}
+
+.mini-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+
+.metric.uptime {
+  opacity: 0.7;
 }
 
 .errors {
@@ -546,9 +602,6 @@ function checkTitle(c: CheckResult): string {
 }
 
 @media (max-width: 720px) {
-  .guest-metric:nth-of-type(n + 2) {
-    display: none;
-  }
   .checks {
     margin-left: 0;
   }

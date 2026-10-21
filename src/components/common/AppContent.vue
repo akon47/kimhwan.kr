@@ -1,5 +1,5 @@
 <template>
-  <div class="content-container">
+  <div class="content-container" :class="{ wide: route.meta.wide }">
     <div class="content-wrapper">
       <div v-show="title" class="title">
         {{ title }}
@@ -34,6 +34,10 @@ const title = computed(() => route.meta.title);
   padding: 20px;
 }
 
+.content-container.wide {
+  grid-template-columns: minmax(0, 1440px);
+}
+
 .content-container > .content-wrapper {
   display: grid;
   justify-self: center;
@@ -46,7 +50,11 @@ const title = computed(() => route.meta.title);
 }
 
 @media (max-width: 720px) {
-  .content-container > .content-wrapper {
+  .content-container.wide {
+  grid-template-columns: minmax(0, 1440px);
+}
+
+.content-container > .content-wrapper {
     min-width: 0px;
     justify-self: stretch;
     grid-template-columns: minmax(0, auto);
