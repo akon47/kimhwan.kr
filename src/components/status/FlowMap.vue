@@ -72,16 +72,16 @@ import type { Health, ServiceStatus, StatusSnapshot } from '@/types/status';
 
 const props = defineProps<{ data: StatusSnapshot }>();
 
-const show = reactive({ traffic: true, power: true, deploy: false, logs: false });
+const show = reactive({ traffic: true, power: true, deploy: true, logs: true });
 
-const W = 1200;
+const W = 1340;
 const H = 780;
-const HOME = { x: 390, y: 20, w: 790, h: 740 };
+const HOME = { x: 540, y: 20, w: 780, h: 740 };
 const NODE_H = 54;
-const COL_APPS = { x: 745, w: 190, top: 180, step: 68 };
-const COL_PLATFORM = { x: 975, w: 195, top: 180, step: 68 };
-const TRUNK1_X = 690;
-const TRUNK2_X = 950;
+const COL_APPS = { x: 885, w: 190, top: 180, step: 68 };
+const COL_PLATFORM = { x: 1115, w: 195, top: 180, step: 68 };
+const TRUNK1_X = 830;
+const TRUNK2_X = 1090;
 const BUS_Y = 148;
 const POWER_Y = 76;
 const MID_Y = 400;
@@ -168,21 +168,21 @@ const nodes = computed<FlowNode[]>(() => {
   const totalRpm = t ? t.total / t.windowMinutes : null;
   const totalBps = t?.bytesByVhost ? Object.values(t.bytesByVhost).reduce((a, b) => a + b, 0) / (t.windowMinutes * 60) : 0;
 
-  out.push({ id: 'visitor', label: '방문자', icon: '🌍', sub: totalRpm !== null ? trafficLabel(totalRpm, totalBps) : undefined, x: 20, y: MID_Y - NODE_H / 2, w: 160, h: NODE_H, health: 'none', title: '인터넷에서 오는 요청 전체' });
-  out.push({ id: 'cloudflare', label: 'Cloudflare', icon: '☁️', sub: '프록시 · 점검 페이지 · Access', x: 206, y: MID_Y - NODE_H / 2, w: 160, h: NODE_H, health: 'none', url: 'https://www.cloudflare.com/', title: 'DNS·프록시 · 정전 시 점검 페이지(Worker) · Kibana 앞 Access' });
+  out.push({ id: 'visitor', label: '방문자', icon: '🌍', sub: totalRpm !== null ? trafficLabel(totalRpm, totalBps) : undefined, x: 20, y: MID_Y - NODE_H / 2, w: 140, h: NODE_H, health: 'none', title: '인터넷에서 오는 요청 전체' });
+  out.push({ id: 'cloudflare', label: 'Cloudflare', icon: '☁️', sub: '프록시 · 점검 페이지 · Access', x: 270, y: MID_Y - NODE_H / 2, w: 200, h: NODE_H, health: 'none', url: 'https://www.cloudflare.com/', title: 'DNS·프록시 · 정전 시 점검 페이지(Worker) · Kibana 앞 Access' });
   if (show.deploy) {
-    out.push({ id: 'github', label: 'GitHub', icon: '🐙', sub: 'push → webhook', x: 20, y: 692, w: 160, h: NODE_H, health: 'none', url: 'https://github.com/akon47', title: '소스 저장소' });
-    out.push({ id: 'dockerhub', label: 'Docker Hub', icon: '🐳', sub: 'akon47/* 이미지', x: 206, y: 692, w: 160, h: NODE_H, health: 'none', url: 'https://hub.docker.com/u/akon47', title: '빌드된 이미지 저장소' });
+    out.push({ id: 'github', label: 'GitHub', icon: '🐙', sub: 'push → webhook', x: 20, y: 692, w: 140, h: NODE_H, health: 'none', url: 'https://github.com/akon47', title: '소스 저장소' });
+    out.push({ id: 'dockerhub', label: 'Docker Hub', icon: '🐳', sub: 'akon47/* 이미지', x: 270, y: 692, w: 200, h: NODE_H, health: 'none', url: 'https://hub.docker.com/u/akon47', title: '빌드된 이미지 저장소' });
   }
 
   const ups = d.ups;
-  out.push({ id: 'power', label: '전원', icon: '🔌', sub: ups?.lineVolts ? `${ups.lineVolts.toFixed(0)} V` : undefined, x: 414, y: POWER_Y, w: 112, h: NODE_H, health: ups ? (ups.onBattery ? 'down' : 'up') : 'none', title: '상용 전원' });
+  out.push({ id: 'power', label: '전원', icon: '🔌', sub: ups?.lineVolts ? `${ups.lineVolts.toFixed(0)} V` : undefined, x: 556, y: POWER_Y, w: 100, h: NODE_H, health: ups ? (ups.onBattery ? 'down' : 'up') : 'none', title: '상용 전원' });
   out.push({
     id: 'ups',
     label: 'UPS',
     icon: '🔋',
     sub: ups ? `${ups.chargePct?.toFixed(0) ?? '–'}% · ${ups.runtimeMin?.toFixed(0) ?? '–'}분 · 부하 ${ups.loadPct?.toFixed(0) ?? '–'}%` : '연결 안 됨',
-    x: 552,
+    x: 676,
     y: POWER_Y,
     w: 170,
     h: NODE_H,
@@ -196,9 +196,9 @@ const nodes = computed<FlowNode[]>(() => {
     label: 'Proxmox 호스트',
     icon: '🧱',
     sub: host ? `CPU ${host.cpuPct.toFixed(0)}% · RAM ${(host.mem.used / 1024 ** 3).toFixed(0)} / ${(host.mem.total / 1024 ** 3).toFixed(0)} GB · VM·LXC ${running}개 실행` : undefined,
-    x: 748,
+    x: 940,
     y: POWER_Y,
-    w: 422,
+    w: 370,
     h: NODE_H,
     health: host ? 'up' : 'none',
     url: 'https://ve.kimhwan.kr/',
@@ -206,7 +206,7 @@ const nodes = computed<FlowNode[]>(() => {
   });
 
   const gw = byId('gateway');
-  out.push({ id: 'gateway', label: 'nginx 관문', icon: '🚪', sub: gw?.latencyMs !== null && gw?.latencyMs !== undefined ? `TLS 종료 · ${gw.latencyMs} ms` : 'TLS 종료', x: 440, y: MID_Y - NODE_H / 2, w: 180, h: NODE_H, health: healthOf('gateway'), title: '모든 공개 도메인이 지나는 관문 (LXC 101)' });
+  out.push({ id: 'gateway', label: 'nginx 관문', icon: '🚪', sub: gw?.latencyMs !== null && gw?.latencyMs !== undefined ? `TLS 종료 · ${gw.latencyMs} ms` : 'TLS 종료', x: 580, y: MID_Y - NODE_H / 2, w: 180, h: NODE_H, health: healthOf('gateway'), title: '모든 공개 도메인이 지나는 관문 (LXC 101)' });
 
   const place = (ids: string[], col: typeof COL_APPS) => {
     ids.forEach((id, i) => {
@@ -242,7 +242,17 @@ function widthFor(r: number): number {
 }
 
 function durationFor(r: number): string {
-  return `${Math.max(0.4, 2.4 - Math.min(r, 150) / 75).toFixed(2)}s`;
+  // few fixed speeds: a changed duration restarts the dash animation, so keep it stable across refreshes
+  if (r >= 60) {
+    return '0.6s';
+  }
+  if (r >= 20) {
+    return '1s';
+  }
+  if (r >= 5) {
+    return '1.5s';
+  }
+  return '2.2s';
 }
 
 const edges = computed<FlowEdge[]>(() => {
@@ -319,10 +329,10 @@ const edges = computed<FlowEdge[]>(() => {
   const jenkins = n('jenkins');
   if (gh && dh && jenkins) {
     const jUp = healthOf('jenkins') === 'up';
-    out.push({ id: 'gh-j', d: `M ${gh.x + gh.w} ${gh.y + gh.h / 2 - 10} C 330 ${gh.y - 110}, ${jenkins.x - 40} ${jenkins.y + jenkins.h / 2 + 120}, ${jenkins.x + 30} ${jenkins.y + jenkins.h}`, kind: 'deploy', active: jUp, dead: !jUp, width: 1.8, duration: '2.4s', title: 'GitHub push → Jenkins 웹훅' });
+    out.push({ id: 'gh-j', d: `M ${gh.x + gh.w} ${gh.y + gh.h / 2 - 10} C ${gh.x + gh.w + 160} ${gh.y - 110}, ${jenkins.x - 40} ${jenkins.y + jenkins.h / 2 + 120}, ${jenkins.x + 30} ${jenkins.y + jenkins.h}`, kind: 'deploy', active: jUp, dead: !jUp, width: 1.8, duration: '2.4s', title: 'GitHub push → Jenkins 웹훅' });
     out.push({ id: 'j-dh', d: `M ${jenkins.x + jenkins.w / 2} ${jenkins.y + jenkins.h} C ${jenkins.x + jenkins.w / 2} 560, ${dh.x + dh.w + 120} ${dh.y - 80}, ${dh.x + dh.w} ${dh.y + dh.h / 2 - 10}`, kind: 'deploy', active: jUp, dead: !jUp, width: 1.8, duration: '2.4s', title: 'Jenkins → Docker Hub 이미지 푸시' });
     if (lastApp) {
-      out.push({ id: 'dh-apps', d: `M ${dh.x + dh.w} ${dh.y + dh.h / 2 + 10} C 470 ${dh.y + 60}, ${COL_APPS.x - 90} ${lastApp.y + lastApp.h + 60}, ${COL_APPS.x + COL_APPS.w / 2} ${lastApp.y + lastApp.h}`, kind: 'deploy', active: jUp, dead: false, width: 1.8, duration: '2.4s', title: 'VM 이 Docker Hub 에서 이미지를 받아 compose 로 배포' });
+      out.push({ id: 'dh-apps', d: `M ${dh.x + dh.w} ${dh.y + dh.h / 2 + 10} C ${dh.x + dh.w + 110} ${dh.y + 60}, ${COL_APPS.x - 90} ${lastApp.y + lastApp.h + 60}, ${COL_APPS.x + COL_APPS.w / 2} ${lastApp.y + lastApp.h}`, kind: 'deploy', active: jUp, dead: false, width: 1.8, duration: '2.4s', title: 'VM 이 Docker Hub 에서 이미지를 받아 compose 로 배포' });
     }
   }
 
@@ -382,7 +392,7 @@ function labelOf(h: Health): string {
 
 .flow-svg {
   width: 100%;
-  min-width: 860px;
+  min-width: 960px;
   height: auto;
   display: block;
   font-family: var(--base-font-family);
@@ -431,13 +441,13 @@ function labelOf(h: Health): string {
 
 .edge.active {
   opacity: 0.9;
-  stroke-dasharray: 8 10;
-  animation: flow linear infinite;
+  stroke-dasharray: 8 10; /* period 18 */
+  animation: flow18 linear infinite;
 }
 
-.edge.deploy.active { stroke-dasharray: 4 9; }
-.edge.logs.active { stroke-dasharray: 2 8; }
-.edge.power.active { stroke-dasharray: 11 9; }
+.edge.deploy.active { stroke-dasharray: 4 9; animation-name: flow13; }   /* period 13 */
+.edge.logs.active { stroke-dasharray: 2 8; animation-name: flow10; }     /* period 10 */
+.edge.power.active { stroke-dasharray: 11 9; animation-name: flow20; }   /* period 20 */
 
 .edge.dead {
   stroke: #f85149;
@@ -448,12 +458,13 @@ function labelOf(h: Health): string {
 
 .edge:hover { opacity: 1; }
 
-@keyframes flow {
-  to { stroke-dashoffset: -36; }
-}
+@keyframes flow18 { to { stroke-dashoffset: -36; } }
+@keyframes flow13 { to { stroke-dashoffset: -39; } }
+@keyframes flow10 { to { stroke-dashoffset: -40; } }
+@keyframes flow20 { to { stroke-dashoffset: -40; } }
 
 .edge-label {
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 500;
   fill: var(--base-color);
   opacity: 0.85;
