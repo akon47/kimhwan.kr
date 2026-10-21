@@ -84,6 +84,37 @@ export interface UpsStatus {
   readonly transfers: number | null;
   readonly lastTransfer: string | null;
   readonly lastOnBattery: string | null;
+  /** Full apcupsd report (added in API v6; absent from older snapshots). */
+  readonly details?: UpsDetails;
+}
+
+export interface UpsDetails {
+  readonly upsName: string | null;
+  readonly serial: string | null;
+  readonly firmware: string | null;
+  readonly batteryDate: string | null;
+  readonly nominalInputV: number | null;
+  readonly nominalBatteryV: number | null;
+  readonly loTransferV: number | null;
+  readonly hiTransferV: number | null;
+  readonly sense: string | null;
+  readonly selfTest: string | null;
+  readonly alarmDelay: string | null;
+  readonly shutdownMinChargePct: number | null;
+  readonly shutdownMinRuntimeMin: number | null;
+  readonly shutdownMaxOnBatterySec: number | null;
+  readonly timeOnBatterySec: number | null;
+  readonly cumOnBatterySec: number | null;
+  readonly lastOnBatteryStart: string | null;
+  readonly lastOnBatteryEnd: string | null;
+  readonly cable: string | null;
+  readonly driver: string | null;
+  readonly upsMode: string | null;
+  readonly apcupsdVersion: string | null;
+  readonly startedAt: string | null;
+  readonly reportedAt: string | null;
+  readonly statFlag: string | null;
+  readonly raw: Record<string, string>;
 }
 
 export interface TrafficSummary {

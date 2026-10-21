@@ -5,10 +5,10 @@
       <label><input v-model="show.power" type="checkbox"/><i class="sw power"/>전원</label>
       <label v-if="!narrow"><input v-model="show.deploy" type="checkbox"/><i class="sw deploy"/>배포 (GitHub → Jenkins → Docker Hub → VM)</label>
       <label v-if="!narrow"><input v-model="show.logs" type="checkbox"/><i class="sw logs"/>접속 로그 → ELK</label>
-      <span class="hint">숫자 = 최근 {{ windowMinutes }}분 평균 요청/분 · ↑송신 ↓수신. 노드를 누르면 자세히 봅니다.</span>
+      <span class="hint">숫자 = 최근 {{ windowMinutes }}분 평균 요청/분 · ↑송신 ↓수신. 마우스를 올리면 연결된 선이 위로 올라오고, 누르면 자세히 봅니다.</span>
     </div>
 
-    <svg :viewBox="`0 0 ${L.w} ${L.h}`" class="flow-svg" :class="{ narrow }" role="img" aria-label="트래픽 흐름도">
+    <svg :viewBox="`0 0 ${L.w} ${L.h}`" class="flow-svg" :class="{ narrow }" role="img" aria-label="트래픽 흐름도" @mouseleave="hoverId = null">
       <defs>
         <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
           <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/>
@@ -19,7 +19,7 @@
       <text :x="L.home.x + 20" :y="L.home.y + 32" class="home-label">🏠 집 서버 · Proxmox · 내부망</text>
       <text v-for="lab in L.labels" :key="lab.text" :x="lab.x" :y="lab.y" class="col-label">{{ lab.text }}</text>
 
-      <g class="edges">
+      <g class="edges" :class="{ dimmed: hoverId !== null }">
         <path
           v-for="e in visibleEdges"
           :key="e.id"
@@ -33,13 +33,21 @@
         </path>
       </g>
 
-      <g class="edge-labels">
+      <g class="edge-labels" :class="{ dimmed: hoverId !== null }">
         <text v-for="e in visibleEdges.filter((x) => x.label)" :key="`l-${e.id}`" :x="e.lx" :y="e.ly" :text-anchor="e.anchor" class="edge-label">
           <tspan v-for="(line, i) in labelLines(e.label)" :key="i" :x="e.lx" :dy="i === 0 ? 0 : 13">{{ line }}</tspan>
         </text>
       </g>
 
-      <g v-for="n in nodes" :key="n.id" class="node" :class="[n.health, { linked: !!n.url || !!n.select }]" @click="n.select && emit('select', n.select)">
+      <g
+        v-for="n in nodes"
+        :key="n.id"
+        class="node"
+        :class="[n.health, { linked: !!n.url || !!n.select, hovered: hoverId === n.id }]"
+        @click="pick(n)"
+        @mouseenter="hoverId = n.id"
+        @mouseleave="hoverId = null"
+      >
         <component :is="n.url && !n.select ? 'a' : 'g'" v-bind="n.url && !n.select ? { href: n.url, target: '_blank', rel: 'noopener' } : {}">
           <title>{{ n.title }}</title>
           <rect :x="n.x" :y="n.y" :width="n.w" :height="n.h" rx="12" class="node-box"/>
@@ -47,6 +55,23 @@
           <text :x="n.x + (n.health !== 'none' ? 30 : 14)" :y="n.y + n.h / 2 + (n.sub ? -3 : 6)" class="node-title">{{ n.icon }} {{ n.label }}</text>
           <text v-if="n.sub" :x="n.x + (n.health !== 'none' ? 30 : 14)" :y="n.y + n.h / 2 + 15" class="node-sub">{{ n.sub }}</text>
         </component>
+      </g>
+
+      <!-- edges of the hovered node, redrawn above the nodes with a halo so their whole path is visible -->
+      <g v-if="hoverId !== null" class="edges-top">
+        <template v-for="e in highlightedEdges" :key="`h-${e.id}`">
+          <path :d="e.d" class="edge-halo" :style="{ strokeWidth: e.width + 6 }"/>
+          <path
+            :d="e.d"
+            class="edge hl"
+            :class="[e.kind, { active: e.active, dead: e.dead, trunk: e.trunk }]"
+            :style="{ strokeWidth: e.width + 0.8, animationDuration: e.duration }"
+            :marker-end="e.trunk ? undefined : 'url(#arrow)'"
+          />
+        </template>
+        <text v-for="e in highlightedEdges.filter((x) => x.label)" :key="`hl-${e.id}`" :x="e.lx" :y="e.ly" :text-anchor="e.anchor" class="edge-label hl">
+          <tspan v-for="(line, i) in labelLines(e.label)" :key="i" :x="e.lx" :dy="i === 0 ? 0 : 13">{{ line }}</tspan>
+        </text>
       </g>
     </svg>
   </div>
@@ -60,6 +85,7 @@ const props = defineProps<{ data: StatusSnapshot }>();
 const emit = defineEmits<{ select: [id: string] }>();
 
 const show = reactive({ traffic: true, power: true, deploy: true, logs: true });
+const hoverId = ref<string | null>(null);
 const wrap = ref<HTMLElement | null>(null);
 const narrow = ref(false);
 let observer: ResizeObserver | undefined;
@@ -267,13 +293,14 @@ const nodes = computed<FlowNode[]>(() => {
   }
 
   const ups = d.ups;
-  at('power', { label: '전원', icon: '🔌', sub: ups?.lineVolts ? `${ups.lineVolts.toFixed(0)} V` : undefined, health: ups ? (ups.onBattery ? 'down' : 'up') : 'none', title: '상용 전원' });
+  at('power', { label: '전원', icon: '🔌', sub: ups?.lineVolts ? `${ups.lineVolts.toFixed(0)} V` : undefined, health: ups ? (ups.onBattery ? 'down' : 'up') : 'none', select: ups ? 'ups' : undefined, title: '상용 전원 (UPS 가 재는 입력 전압)' });
   at('ups', {
     label: 'UPS',
     icon: '🔋',
     sub: ups ? `${ups.chargePct?.toFixed(0) ?? '–'}% · ${ups.runtimeMin?.toFixed(0) ?? '–'}분 · 부하 ${ups.loadPct?.toFixed(0) ?? '–'}%` : '연결 안 됨',
     health: ups ? (ups.onBattery ? 'degraded' : 'up') : 'none',
-    title: ups ? `${ups.model} · ${ups.status}` : 'UPS 상태를 읽지 못함',
+    select: ups ? 'ups' : undefined,
+    title: ups ? `${ups.model} · ${ups.status} · 누르면 상세` : 'UPS 상태를 읽지 못함',
   });
   const host = d.host;
   const running = d.guests.filter((g) => g.status === 'running').length;
@@ -466,6 +493,44 @@ function branch(out: FlowEdge[], target: FlowNode, trunkX: number, gwUp: boolean
 
 const visibleEdges = computed(() => edges.value.filter((e) => show[e.kind]));
 
+/** Which two nodes an edge joins (trunks belong to the gateway; branches come off the trunk). */
+function endpointsOf(id: string): [string, string] {
+  const fixed: Record<string, [string, string]> = {
+    'v-cf': ['visitor', 'cloudflare'],
+    'cf-gw': ['cloudflare', 'gateway'],
+    'v-gw': ['visitor', 'gateway'],
+    'gw-trunk': ['gateway', 'trunk'],
+    trunk1: ['gateway', 'trunk'],
+    bus: ['gateway', 'trunk'],
+    trunk2: ['gateway', 'trunk'],
+    'p-ups': ['power', 'ups'],
+    'ups-host': ['ups', 'host'],
+    'gh-j': ['github', 'jenkins'],
+    'j-dh': ['jenkins', 'dockerhub'],
+    'dh-apps': ['dockerhub', 'apps'],
+    'gw-elk': ['gateway', 'elk'],
+  };
+  return fixed[id] ?? (id.startsWith('br-') ? ['trunk', id.slice(3)] : ['', '']);
+}
+
+const highlightedEdges = computed(() => {
+  const id = hoverId.value;
+  if (id === null) {
+    return [];
+  }
+  return visibleEdges.value.filter((e) => {
+    const [a, b] = endpointsOf(e.id);
+    return a === id || b === id;
+  });
+});
+
+function pick(n: FlowNode) {
+  if (n.select) {
+    hoverId.value = null;
+    emit('select', n.select);
+  }
+}
+
 function rpmSum(list: FlowNode[]): number {
   return list.reduce((sum, x) => sum + rpm(x.id), 0);
 }
@@ -573,6 +638,32 @@ function labelOf(h: Health): string {
 }
 
 .edge:hover { opacity: 1; }
+
+/* hover: everything else fades, the hovered node's edges are redrawn on top */
+.edges.dimmed .edge { opacity: 0.1; }
+.edge-labels.dimmed .edge-label { opacity: 0.2; }
+
+.edges-top {
+  pointer-events: none;
+}
+
+.edge-halo {
+  fill: none;
+  stroke: var(--content-background-color);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+
+.edge.hl,
+.edge.hl.trunk {
+  opacity: 1;
+}
+
+.edge-label.hl {
+  opacity: 1;
+  font-weight: bold;
+}
 
 @keyframes flow18 { to { stroke-dashoffset: -36; } }
 @keyframes flow13 { to { stroke-dashoffset: -39; } }

@@ -62,7 +62,7 @@
           <div class="tile-value">{{ uptimeShort(data.host.uptimeSec) }}</div>
           <div class="tile-note">{{ data.host.pveVersion.replace('pve-manager/', 'PVE ').split('/')[0] }} · {{ data.host.kernel }}</div>
         </div>
-        <div v-if="data.ups" class="tile" :class="{ warn: data.ups.onBattery }">
+        <div v-if="data.ups" class="tile clickable" :class="{ warn: data.ups.onBattery }" role="button" tabindex="0" title="누르면 UPS 상세" @click="openDetail('ups')" @keydown.enter="openDetail('ups')">
           <div class="tile-label">🔋 UPS</div>
           <div class="tile-value">{{ data.ups.chargePct?.toFixed(0) ?? '–' }}<small>%</small></div>
           <div class="bar"><span :style="barStyle(data.ups.chargePct ?? 0, true)"/></div>
@@ -132,6 +132,7 @@
       </div>
     </section>
 
+    <UpsDetail v-if="upsOpen && data?.ups" :ups="data.ups" @close="upsOpen = false"/>
     <ServiceDetail
       v-if="selected"
       :service="selected"
@@ -182,6 +183,7 @@
 import { computed, ref } from 'vue';
 import FlowMap from '@/components/status/FlowMap.vue';
 import ServiceDetail from '@/components/status/ServiceDetail.vue';
+import UpsDetail from '@/components/status/UpsDetail.vue';
 import SparkLine from '@/components/status/SparkLine.vue';
 import { useStatus } from '@/composables/useStatus';
 import type { CheckResult, Health, ServiceStats, ServiceStatus } from '@/types/status';
@@ -191,7 +193,13 @@ const { data, error, loading, lastUpdated, history, uptime, refresh } = useStatu
 const selectedId = ref<string | null>(null);
 const selected = computed(() => (selectedId.value ? data.value?.services.find((s) => s.id === selectedId.value) : undefined));
 
+const upsOpen = ref(false);
+
 function openDetail(id: string) {
+  if (id === 'ups') {
+    upsOpen.value = true;
+    return;
+  }
   selectedId.value = id;
 }
 
@@ -525,6 +533,14 @@ function checkTitle(c: CheckResult): string {
 
 .card-links a:hover {
   background: var(--menu-hover-color);
+}
+
+.tile.clickable {
+  cursor: pointer;
+}
+
+.tile.clickable:hover {
+  border-color: var(--link-accent-color);
 }
 
 .tile-spark {
