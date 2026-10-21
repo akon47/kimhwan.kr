@@ -183,29 +183,30 @@ function labelLines(label?: string): string[] {
   return label ? label.split('\n') : [];
 }
 
-/** Wide: two service columns right of the gateway; power row on top; GitHub/Docker Hub bottom-left. */
+/** Wide: internet column on the left (visitor above Cloudflare, GitHub/Docker Hub below), home box with
+ *  power row on top, gateway in the middle and two service columns on the right. */
 const WIDE: Layout = {
-  w: 1340,
+  w: 1140,
   h: 780,
-  home: { x: 540, y: 20, w: 780, h: 740 },
+  home: { x: 300, y: 20, w: 820, h: 740 },
   labels: [
-    { text: '서비스', x: 885, y: 168 },
-    { text: '인프라', x: 1115, y: 168 },
+    { text: '서비스', x: 645, y: 168 },
+    { text: '인프라', x: 890, y: 168 },
   ],
   pos: {
-    visitor: { x: 20, y: 373, w: 140 },
-    cloudflare: { x: 270, y: 373, w: 200 },
-    github: { x: 20, y: 692, w: 140 },
-    dockerhub: { x: 270, y: 692, w: 200 },
-    power: { x: 556, y: 76, w: 100 },
-    ups: { x: 676, y: 76, w: 170 },
-    host: { x: 940, y: 76, w: 370 },
-    gateway: { x: 580, y: 373, w: 180 },
+    visitor: { x: 40, y: 250, w: 200 },
+    cloudflare: { x: 40, y: 373, w: 200 },
+    github: { x: 40, y: 610, w: 200 },
+    dockerhub: { x: 40, y: 700, w: 200 },
+    power: { x: 316, y: 76, w: 96 },
+    ups: { x: 436, y: 76, w: 180 },
+    host: { x: 700, y: 76, w: 400 },
+    gateway: { x: 350, y: 373, w: 180 },
   },
-  apps: { x: 885, w: 190, top: 180, step: 68 },
-  platform: { x: 1115, w: 195, top: 180, step: 68 },
-  trunk1: 830,
-  trunk2: 1090,
+  apps: { x: 645, w: 205, top: 180, step: 68 },
+  platform: { x: 890, w: 210, top: 180, step: 68 },
+  trunk1: 590,
+  trunk2: 865,
   busY: 148,
 };
 
@@ -378,10 +379,14 @@ const edges = computed<FlowEdge[]>(() => {
 
   if (!narrow.value) {
     const midY = gw.y + gw.h / 2;
-    out.push({ id: 'v-cf', d: curveLR(visitor, cf), kind: 'traffic', active: proxied > 0, dead: false, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare 경유 ${fmtRate(proxied)}`, label: trafficLines(proxied, proxiedOut, proxiedIn), lx: (visitor.x + visitor.w + cf.x) / 2, ly: midY - 22, anchor: 'middle' });
+    const vcx = visitor.x + visitor.w / 2;
+    const gapMid = (visitor.y + visitor.h + cf.y) / 2;
+    out.push({ id: 'v-cf', d: `M ${vcx} ${visitor.y + visitor.h} L ${vcx} ${cf.y}`, kind: 'traffic', active: proxied > 0, dead: false, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare 경유 ${fmtRate(proxied)}`, label: trafficLines(proxied, proxiedOut, proxiedIn), lx: vcx + 10, ly: gapMid - 4, anchor: 'start' });
     out.push({ id: 'cf-gw', d: curveLR(cf, gw), kind: 'traffic', active: proxied > 0 && gwUp, dead: !gwUp, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare → 관문 ${fmtRate(proxied)}`, label: trafficLines(proxied, proxiedOut, proxiedIn), lx: (cf.x + cf.w + gw.x) / 2, ly: midY - 22, anchor: 'middle' });
-    const vx = visitor.x + visitor.w / 2;
-    out.push({ id: 'v-gw', d: `M ${vx} ${visitor.y} C ${vx} 270, ${gw.x + 40} 270, ${gw.x + 40} ${gw.y}`, kind: 'traffic', active: direct > 0 && gwUp, dead: !gwUp, width: widthFor(direct), duration: durationFor(direct), title: `직결 (Cloudflare 를 거치지 않는 NAS·Proxmox·메일·VPN) ${fmtRate(direct)}`, label: trafficLines(direct, directOut, directIn, '직결 '), lx: (vx + gw.x + 40) / 2, ly: 266, anchor: 'middle' });
+    const vx = visitor.x + visitor.w;
+    const vy = visitor.y + visitor.h / 2;
+    const gx = gw.x + 40;
+    out.push({ id: 'v-gw', d: `M ${vx} ${vy} C ${vx + 60} ${vy}, ${gx} ${vy + 20}, ${gx} ${gw.y}`, kind: 'traffic', active: direct > 0 && gwUp, dead: !gwUp, width: widthFor(direct), duration: durationFor(direct), title: `직결 (Cloudflare 를 거치지 않는 NAS·Proxmox·메일·VPN) ${fmtRate(direct)}`, label: trafficLines(direct, directOut, directIn, '직결 '), lx: (vx + gx) / 2, ly: vy - 27, anchor: 'middle' });
     if (lastApp && lastPlatform) {
       out.push({ id: 'gw-trunk', d: `M ${gw.x + gw.w} ${midY} L ${lay.trunk1} ${midY}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(total) + 1, duration: '1s', title: `관문 → 내부 서비스 ${fmtRate(total)}` });
       out.push({ id: 'trunk1', d: `M ${lay.trunk1} ${lay.busY} L ${lay.trunk1} ${lastApp.y + lastApp.h / 2}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(total) + 1, duration: '1s', title: '서비스 간선' });
@@ -619,7 +624,7 @@ function labelOf(h: Health): string {
 }
 
 .node-sub {
-  font-size: 11.5px;
+  font-size: 12px;
   fill: var(--base-color);
   opacity: 0.65;
 }
