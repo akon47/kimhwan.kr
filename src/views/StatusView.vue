@@ -27,7 +27,7 @@
     <!-- flow map -->
     <section v-if="data" class="block">
       <h4 class="block-title">🔀 흐름도 <small>트래픽 · 전원 · 배포 · 로그가 지금 어디로 흐르는지</small></h4>
-      <FlowMap :data="data"/>
+      <FlowMap :data="data" @select="openDetail"/>
     </section>
 
     <!-- host -->
@@ -38,12 +38,14 @@
           <div class="tile-label">CPU</div>
           <div class="tile-value">{{ data.host.cpuPct.toFixed(1) }}<small>%</small></div>
           <div class="bar"><span :style="barStyle(data.host.cpuPct)"/></div>
-          <div class="tile-note">{{ data.host.cpuCount }} threads · load {{ data.host.load1.toFixed(2) }}</div>
+          <SparkLine v-if="cpuSeries.length > 1" :values="cpuSeries" :max="100" :width="200" :height="26" class="tile-spark"/>
+          <div class="tile-note">{{ data.host.cpuCount }} threads · load {{ data.host.load1.toFixed(2) }}<template v-if="cpuSeries.length > 1"> · 24h</template></div>
         </div>
         <div class="tile">
           <div class="tile-label">메모리</div>
           <div class="tile-value">{{ pct(data.host.mem.used, data.host.mem.total) }}<small>%</small></div>
           <div class="bar"><span :style="barStyle(pct(data.host.mem.used, data.host.mem.total))"/></div>
+          <SparkLine v-if="memSeries.length > 1" :values="memSeries" :max="100" :width="200" :height="26" class="tile-spark"/>
           <div class="tile-note">
             {{ gb(data.host.mem.used) }} / {{ gb(data.host.mem.total) }} GB
             <template v-if="data.host.swap.used > 0"> · swap {{ gb(data.host.swap.used) }} GB</template>
@@ -91,14 +93,15 @@
     <section v-for="group in groups" :key="group.key" class="block">
       <h4 class="block-title">{{ group.title }}</h4>
       <div class="cards">
-        <a
+        <div
           v-for="s in group.items"
           :key="s.id"
           class="card"
           :class="s.health"
-          :href="s.url"
-          :target="s.url ? '_blank' : undefined"
-          :rel="s.url ? 'noopener' : undefined"
+          role="button"
+          tabindex="0"
+          @click="openDetail(s.id)"
+          @keydown.enter="openDetail(s.id)"
         >
           <div class="card-head">
             <span class="card-icon">{{ s.icon }}</span>
@@ -106,18 +109,37 @@
             <span class="dot" :class="s.health"/>
           </div>
           <div class="card-desc">{{ s.description }}</div>
-          <div class="card-foot">
+          <div class="card-stats">
             <span class="health-label" :class="s.health">{{ healthLabel(s.health) }}</span>
             <span v-if="s.latencyMs !== null" class="latency">{{ s.latencyMs }} ms</span>
+            <span v-if="statsOf(s.id)?.uptime24hPct !== null && statsOf(s.id)?.uptime24hPct !== undefined" class="uptime" :title="`가동률 24시간 / 30일`">
+              {{ pctText(statsOf(s.id)?.uptime24hPct) }} <small>24h</small> · {{ pctText(statsOf(s.id)?.uptime30dPct) }} <small>30d</small>
+            </span>
+          </div>
+          <SparkLine v-if="latencySeries(s.id).length > 1" :values="latencySeries(s.id)" :width="220" :height="22" class="card-spark"/>
+          <div class="card-foot">
             <span class="checks">
               <span v-for="c in s.checks" :key="c.name" class="check" :class="{ ok: c.ok }" :title="checkTitle(c)">
                 {{ c.ok ? '✓' : '✗' }} {{ c.name }}
               </span>
             </span>
+            <span class="card-links" @click.stop>
+              <a v-if="s.url" :href="s.url" target="_blank" rel="noopener" title="열기">↗</a>
+              <a v-for="r in s.repos ?? []" :key="r" :href="r" target="_blank" rel="noopener" :title="r" class="gh">GitHub</a>
+            </span>
           </div>
-        </a>
+        </div>
       </div>
     </section>
+
+    <ServiceDetail
+      v-if="selected"
+      :service="selected"
+      :stats="statsOf(selected.id)"
+      :traffic="trafficOf(selected.id)"
+      :window-minutes="data?.traffic?.windowMinutes ?? 5"
+      @close="selectedId = null"
+    />
 
     <!-- guests -->
     <section v-if="data?.guests.length" class="block">
@@ -157,12 +179,45 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import FlowMap from '@/components/status/FlowMap.vue';
+import ServiceDetail from '@/components/status/ServiceDetail.vue';
+import SparkLine from '@/components/status/SparkLine.vue';
 import { useStatus } from '@/composables/useStatus';
-import type { CheckResult, Health, ServiceStatus } from '@/types/status';
+import type { CheckResult, Health, ServiceStats, ServiceStatus } from '@/types/status';
 
-const { data, error, loading, lastUpdated, refresh } = useStatus();
+const { data, error, loading, lastUpdated, history, uptime, refresh } = useStatus();
+
+const selectedId = ref<string | null>(null);
+const selected = computed(() => (selectedId.value ? data.value?.services.find((s) => s.id === selectedId.value) : undefined));
+
+function openDetail(id: string) {
+  selectedId.value = id;
+}
+
+function statsOf(id: string): ServiceStats | undefined {
+  return uptime.value?.services.find((s) => s.id === id);
+}
+
+function latencySeries(id: string): (number | null)[] {
+  return statsOf(id)?.latency24h ?? [];
+}
+
+function trafficOf(id: string): { rpm: number; bpsOut: number; bpsIn: number } | undefined {
+  const t = data.value?.traffic;
+  if (!t) {
+    return undefined;
+  }
+  const sec = t.windowMinutes * 60;
+  return { rpm: (t.byService[id] ?? 0) / t.windowMinutes, bpsOut: (t.bytesByService?.[id] ?? 0) / sec, bpsIn: (t.reqBytesByService?.[id] ?? 0) / sec };
+}
+
+const cpuSeries = computed(() => history.value?.points.map((p) => p.cpuPct) ?? []);
+const memSeries = computed(() => history.value?.points.map((p) => p.memPct) ?? []);
+
+function pctText(v: number | null | undefined): string {
+  return v === null || v === undefined ? '–' : `${v.toFixed(v >= 99.95 ? 0 : 1)}%`;
+}
 
 const overallClass = computed<Health | 'unknown'>(() => (data.value ? data.value.overall : error.value ? 'down' : 'unknown'));
 
@@ -427,7 +482,54 @@ function checkTitle(c: CheckResult): string {
   border-radius: 8px;
   color: inherit;
   text-decoration: none;
+  cursor: pointer;
+  user-select: none;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.card-stats {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 12px;
+}
+
+.uptime {
+  opacity: 0.8;
+}
+
+.uptime small {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.card-spark {
+  width: 100%;
+  opacity: 0.9;
+}
+
+.card-links {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.card-links a {
+  font-size: 11px;
+  padding: 1px 7px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.card-links a:hover {
+  background: var(--menu-hover-color);
+}
+
+.tile-spark {
+  width: 100%;
+  margin-top: 2px;
 }
 
 .card:hover {
@@ -486,8 +588,8 @@ function checkTitle(c: CheckResult): string {
 
 .checks {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  margin-left: auto;
 }
 
 .check {

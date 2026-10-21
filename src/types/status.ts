@@ -16,6 +16,7 @@ export interface ServiceStatus {
   readonly url?: string;
   readonly category: 'apps' | 'platform';
   readonly icon: string;
+  readonly repos?: string[];
   readonly health: Health;
   readonly latencyMs: number | null;
   readonly checks: CheckResult[];
@@ -93,6 +94,38 @@ export interface TrafficSummary {
   /** Response bytes in the window (older API versions omit these). */
   readonly bytesByVhost?: Record<string, number>;
   readonly bytesByService?: Record<string, number>;
+  readonly reqBytesByVhost?: Record<string, number>;
+  readonly reqBytesByService?: Record<string, number>;
+}
+
+export interface HostPoint {
+  readonly ts: string;
+  readonly cpuPct: number | null;
+  readonly memPct: number | null;
+  readonly swapPct: number | null;
+  readonly up: number;
+  readonly degraded: number;
+  readonly down: number;
+}
+
+export interface HistoryResponse {
+  readonly hours: number;
+  readonly bucketMinutes: number;
+  readonly points: HostPoint[];
+}
+
+export interface ServiceStats {
+  readonly id: string;
+  readonly uptime24hPct: number | null;
+  readonly uptime30dPct: number | null;
+  readonly avgLatency24hMs: number | null;
+  readonly latency24h: (number | null)[];
+  readonly bucketMinutes: number;
+}
+
+export interface UptimeResponse {
+  readonly generatedAt: string;
+  readonly services: ServiceStats[];
 }
 
 export interface StatusSnapshot {

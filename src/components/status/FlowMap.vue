@@ -1,27 +1,24 @@
 <template>
-  <div class="flow-map">
+  <div ref="wrap" class="flow-map">
     <div class="toggles">
       <label><input v-model="show.traffic" type="checkbox"/><i class="sw traffic"/>트래픽</label>
       <label><input v-model="show.power" type="checkbox"/><i class="sw power"/>전원</label>
-      <label><input v-model="show.deploy" type="checkbox"/><i class="sw deploy"/>배포 (GitHub → Jenkins → Docker Hub → VM)</label>
-      <label><input v-model="show.logs" type="checkbox"/><i class="sw logs"/>접속 로그 → ELK</label>
-      <span class="hint">선의 숫자 = 최근 {{ windowMinutes }}분 평균 요청/분 · 송신 KB/s. 빨간 점선 = 끊김.</span>
+      <label v-if="!narrow"><input v-model="show.deploy" type="checkbox"/><i class="sw deploy"/>배포 (GitHub → Jenkins → Docker Hub → VM)</label>
+      <label v-if="!narrow"><input v-model="show.logs" type="checkbox"/><i class="sw logs"/>접속 로그 → ELK</label>
+      <span class="hint">숫자 = 최근 {{ windowMinutes }}분 평균 요청/분 · ↑송신 ↓수신. 노드를 누르면 자세히 봅니다.</span>
     </div>
 
-    <svg :viewBox="`0 0 ${W} ${H}`" class="flow-svg" role="img" aria-label="트래픽 흐름도">
+    <svg :viewBox="`0 0 ${L.w} ${L.h}`" class="flow-svg" :class="{ narrow }" role="img" aria-label="트래픽 흐름도">
       <defs>
         <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
           <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/>
         </marker>
       </defs>
 
-      <!-- home boundary -->
-      <rect :x="HOME.x" :y="HOME.y" :width="HOME.w" :height="HOME.h" rx="18" class="home-box"/>
-      <text :x="HOME.x + 20" :y="HOME.y + 32" class="home-label">🏠 집 서버 · Proxmox · 내부망 10.10.10.0/24</text>
-      <text :x="COL_APPS.x" :y="COL_APPS.top - 12" class="col-label">서비스</text>
-      <text :x="COL_PLATFORM.x" :y="COL_PLATFORM.top - 12" class="col-label">인프라</text>
+      <rect :x="L.home.x" :y="L.home.y" :width="L.home.w" :height="L.home.h" rx="18" class="home-box"/>
+      <text :x="L.home.x + 20" :y="L.home.y + 32" class="home-label">🏠 집 서버 · Proxmox · 내부망</text>
+      <text v-for="lab in L.labels" :key="lab.text" :x="lab.x" :y="lab.y" class="col-label">{{ lab.text }}</text>
 
-      <!-- edges -->
       <g class="edges">
         <path
           v-for="e in visibleEdges"
@@ -36,29 +33,18 @@
         </path>
       </g>
 
-      <!-- edge labels -->
       <g class="edge-labels">
-        <text
-          v-for="e in visibleEdges.filter((x) => x.label)"
-          :key="`l-${e.id}`"
-          :x="e.lx"
-          :y="e.ly"
-          :text-anchor="e.anchor"
-          class="edge-label"
-        >
+        <text v-for="e in visibleEdges.filter((x) => x.label)" :key="`l-${e.id}`" :x="e.lx" :y="e.ly" :text-anchor="e.anchor" class="edge-label">
           {{ e.label }}
         </text>
       </g>
 
-      <!-- nodes (the whole box is the link; text never captures the pointer) -->
-      <g v-for="n in nodes" :key="n.id" class="node" :class="[n.health, { linked: !!n.url }]">
-        <component :is="n.url ? 'a' : 'g'" v-bind="n.url ? { href: n.url, target: '_blank', rel: 'noopener' } : {}">
+      <g v-for="n in nodes" :key="n.id" class="node" :class="[n.health, { linked: !!n.url || !!n.select }]" @click="n.select && emit('select', n.select)">
+        <component :is="n.url && !n.select ? 'a' : 'g'" v-bind="n.url && !n.select ? { href: n.url, target: '_blank', rel: 'noopener' } : {}">
           <title>{{ n.title }}</title>
           <rect :x="n.x" :y="n.y" :width="n.w" :height="n.h" rx="12" class="node-box"/>
           <circle v-if="n.health !== 'none'" :cx="n.x + 16" :cy="n.y + n.h / 2" r="5" class="node-dot"/>
-          <text :x="n.x + (n.health !== 'none' ? 30 : 14)" :y="n.y + n.h / 2 + (n.sub ? -3 : 6)" class="node-title">
-            {{ n.icon }} {{ n.label }}
-          </text>
+          <text :x="n.x + (n.health !== 'none' ? 30 : 14)" :y="n.y + n.h / 2 + (n.sub ? -3 : 6)" class="node-title">{{ n.icon }} {{ n.label }}</text>
           <text v-if="n.sub" :x="n.x + (n.health !== 'none' ? 30 : 14)" :y="n.y + n.h / 2 + 15" class="node-sub">{{ n.sub }}</text>
         </component>
       </g>
@@ -67,24 +53,33 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import type { Health, ServiceStatus, StatusSnapshot } from '@/types/status';
 
 const props = defineProps<{ data: StatusSnapshot }>();
+const emit = defineEmits<{ select: [id: string] }>();
 
 const show = reactive({ traffic: true, power: true, deploy: true, logs: true });
+const wrap = ref<HTMLElement | null>(null);
+const narrow = ref(false);
+let observer: ResizeObserver | undefined;
 
-const W = 1340;
-const H = 780;
-const HOME = { x: 540, y: 20, w: 780, h: 740 };
+onMounted(() => {
+  const update = () => {
+    narrow.value = (wrap.value?.clientWidth ?? 1000) < 720;
+  };
+  update();
+  if (typeof ResizeObserver !== 'undefined' && wrap.value) {
+    observer = new ResizeObserver(update);
+    observer.observe(wrap.value);
+  }
+});
+onUnmounted(() => observer?.disconnect());
+
 const NODE_H = 54;
-const COL_APPS = { x: 885, w: 190, top: 180, step: 68 };
-const COL_PLATFORM = { x: 1115, w: 195, top: 180, step: 68 };
-const TRUNK1_X = 830;
-const TRUNK2_X = 1090;
-const BUS_Y = 148;
-const POWER_Y = 76;
-const MID_Y = 400;
+const APP_ORDER = ['homepage', 'hwanstory', 'hwanscord', 'shootgame', 'screenshare', 'funcia', 'visit-counter', 'n8n'];
+const PLATFORM_ORDER = ['jenkins', 'elk', 'mail', 'nas', 'vpn', 'proxmox'];
+const DIRECT = new Set(['nas', 'proxmox', 'mail', 'vpn']);
 
 type NodeHealth = Health | 'none';
 
@@ -99,6 +94,8 @@ interface FlowNode {
   h: number;
   health: NodeHealth;
   url?: string;
+  /** Service id to open in the detail panel instead of following the link. */
+  select?: string;
   title: string;
 }
 
@@ -118,9 +115,18 @@ interface FlowEdge {
   anchor?: 'start' | 'middle' | 'end';
 }
 
-const APP_ORDER = ['homepage', 'hwanstory', 'hwanscord', 'shootgame', 'screenshare', 'funcia', 'visit-counter', 'n8n'];
-const PLATFORM_ORDER = ['jenkins', 'elk', 'mail', 'nas', 'vpn', 'proxmox'];
-const DIRECT = new Set(['nas', 'proxmox', 'mail', 'vpn']);
+interface Layout {
+  w: number;
+  h: number;
+  home: { x: number; y: number; w: number; h: number };
+  labels: { text: string; x: number; y: number }[];
+  pos: Record<string, { x: number; y: number; w: number }>;
+  apps: { x: number; w: number; top: number; step: number };
+  platform: { x: number; w: number; top: number; step: number };
+  trunk1: number;
+  trunk2: number;
+  busY: number;
+}
 
 const windowMinutes = computed(() => props.data.traffic?.windowMinutes ?? 5);
 
@@ -129,9 +135,14 @@ function rpm(id: string): number {
   return t ? (t.byService[id] ?? 0) / t.windowMinutes : 0;
 }
 
-function bps(id: string): number {
+function bpsOut(id: string): number {
   const t = props.data.traffic;
   return t?.bytesByService ? (t.bytesByService[id] ?? 0) / (t.windowMinutes * 60) : 0;
+}
+
+function bpsIn(id: string): number {
+  const t = props.data.traffic;
+  return t?.reqBytesByService ? (t.reqBytesByService[id] ?? 0) / (t.windowMinutes * 60) : 0;
 }
 
 function byId(id: string): ServiceStatus | undefined {
@@ -148,79 +159,136 @@ function fmtRate(r: number): string {
 
 function fmtBps(b: number): string {
   if (b <= 0) {
-    return '';
+    return '0';
   }
-  return b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB/s` : b >= 1024 ? `${(b / 1024).toFixed(0)} KB/s` : `${b.toFixed(0)} B/s`;
+  return b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)}M/s` : b >= 1024 ? `${(b / 1024).toFixed(0)}K/s` : `${b.toFixed(0)}B/s`;
 }
 
-function trafficLabel(r: number, b: number): string | undefined {
+function trafficLabel(r: number, out: number, inb: number): string | undefined {
   if (r <= 0) {
     return undefined;
   }
-  const bytes = fmtBps(b);
-  return bytes ? `${fmtRate(r)} · ${bytes}` : fmtRate(r);
+  return `${fmtRate(r)} · ↑${fmtBps(out)} ↓${fmtBps(inb)}`;
 }
+
+/** Wide: two service columns right of the gateway; power row on top; GitHub/Docker Hub bottom-left. */
+const WIDE: Layout = {
+  w: 1340,
+  h: 780,
+  home: { x: 540, y: 20, w: 780, h: 740 },
+  labels: [
+    { text: '서비스', x: 885, y: 168 },
+    { text: '인프라', x: 1115, y: 168 },
+  ],
+  pos: {
+    visitor: { x: 20, y: 373, w: 140 },
+    cloudflare: { x: 270, y: 373, w: 200 },
+    github: { x: 20, y: 692, w: 140 },
+    dockerhub: { x: 270, y: 692, w: 200 },
+    power: { x: 556, y: 76, w: 100 },
+    ups: { x: 676, y: 76, w: 170 },
+    host: { x: 940, y: 76, w: 370 },
+    gateway: { x: 580, y: 373, w: 180 },
+  },
+  apps: { x: 885, w: 190, top: 180, step: 68 },
+  platform: { x: 1115, w: 195, top: 180, step: 68 },
+  trunk1: 830,
+  trunk2: 1090,
+  busY: 148,
+};
+
+/** Narrow (phones): internet on top, then the home box with power, host, gateway and one column of services. */
+const NARROW: Layout = (() => {
+  const nx = 40;
+  const nw = 370;
+  const step = 64;
+  const homeY = 176;
+  const appsTop = 480;
+  const platformTop = appsTop + APP_ORDER.length * step + 40;
+  const bottom = platformTop + (PLATFORM_ORDER.length - 1) * step + NODE_H + 16;
+  return {
+    w: 460,
+    h: bottom + 12,
+    home: { x: 20, y: homeY, w: 410, h: bottom - homeY },
+    labels: [
+      { text: '서비스', x: 80, y: appsTop - 12 },
+      { text: '인프라', x: 80, y: platformTop - 12 },
+    ],
+    pos: {
+      visitor: { x: nx, y: 20, w: nw },
+      cloudflare: { x: nx, y: 96, w: nw },
+      power: { x: nx, y: 224, w: 140 },
+      ups: { x: 200, y: 224, w: 210 },
+      host: { x: nx, y: 302, w: nw },
+      gateway: { x: nx, y: 376, w: nw },
+    },
+    apps: { x: 80, w: 330, top: appsTop, step },
+    platform: { x: 80, w: 330, top: platformTop, step },
+    trunk1: 54,
+    trunk2: 54,
+    busY: 0,
+  };
+})();
+
+const L = computed<Layout>(() => (narrow.value ? NARROW : WIDE));
 
 const nodes = computed<FlowNode[]>(() => {
   const d = props.data;
+  const lay = L.value;
   const out: FlowNode[] = [];
   const t = d.traffic;
   const totalRpm = t ? t.total / t.windowMinutes : null;
-  const totalBps = t?.bytesByVhost ? Object.values(t.bytesByVhost).reduce((a, b) => a + b, 0) / (t.windowMinutes * 60) : 0;
+  const sumBytes = (m?: Record<string, number>) => (m && t ? Object.values(m).reduce((a, b) => a + b, 0) / (t.windowMinutes * 60) : 0);
+  const at = (id: string, extra: Omit<FlowNode, 'x' | 'y' | 'w' | 'h' | 'id'>) => {
+    const p = lay.pos[id];
+    if (p) {
+      out.push({ id, x: p.x, y: p.y, w: p.w, h: NODE_H, ...extra });
+    }
+  };
 
-  out.push({ id: 'visitor', label: '방문자', icon: '🌍', sub: totalRpm !== null ? trafficLabel(totalRpm, totalBps) : undefined, x: 20, y: MID_Y - NODE_H / 2, w: 140, h: NODE_H, health: 'none', title: '인터넷에서 오는 요청 전체' });
-  out.push({ id: 'cloudflare', label: 'Cloudflare', icon: '☁️', sub: '프록시 · 점검 페이지 · Access', x: 270, y: MID_Y - NODE_H / 2, w: 200, h: NODE_H, health: 'none', url: 'https://www.cloudflare.com/', title: 'DNS·프록시 · 정전 시 점검 페이지(Worker) · Kibana 앞 Access' });
-  if (show.deploy) {
-    out.push({ id: 'github', label: 'GitHub', icon: '🐙', sub: 'push → webhook', x: 20, y: 692, w: 140, h: NODE_H, health: 'none', url: 'https://github.com/akon47', title: '소스 저장소' });
-    out.push({ id: 'dockerhub', label: 'Docker Hub', icon: '🐳', sub: 'akon47/* 이미지', x: 270, y: 692, w: 200, h: NODE_H, health: 'none', url: 'https://hub.docker.com/u/akon47', title: '빌드된 이미지 저장소' });
+  at('visitor', { label: '방문자', icon: '🌍', sub: totalRpm !== null ? trafficLabel(totalRpm, sumBytes(t?.bytesByVhost), sumBytes(t?.reqBytesByVhost)) : undefined, health: 'none', title: '인터넷에서 오는 요청 전체' });
+  at('cloudflare', { label: 'Cloudflare', icon: '☁️', sub: '프록시 · 점검 페이지 · Access', health: 'none', url: 'https://www.cloudflare.com/', title: 'DNS·프록시 · 정전 시 점검 페이지(Worker) · Kibana 앞 Access' });
+  if (show.deploy && !narrow.value) {
+    at('github', { label: 'GitHub', icon: '🐙', sub: 'push → webhook', health: 'none', url: 'https://github.com/akon47', title: '소스 저장소' });
+    at('dockerhub', { label: 'Docker Hub', icon: '🐳', sub: 'akon47/* 이미지', health: 'none', url: 'https://hub.docker.com/u/akon47', title: '빌드된 이미지 저장소' });
   }
 
   const ups = d.ups;
-  out.push({ id: 'power', label: '전원', icon: '🔌', sub: ups?.lineVolts ? `${ups.lineVolts.toFixed(0)} V` : undefined, x: 556, y: POWER_Y, w: 100, h: NODE_H, health: ups ? (ups.onBattery ? 'down' : 'up') : 'none', title: '상용 전원' });
-  out.push({
-    id: 'ups',
+  at('power', { label: '전원', icon: '🔌', sub: ups?.lineVolts ? `${ups.lineVolts.toFixed(0)} V` : undefined, health: ups ? (ups.onBattery ? 'down' : 'up') : 'none', title: '상용 전원' });
+  at('ups', {
     label: 'UPS',
     icon: '🔋',
     sub: ups ? `${ups.chargePct?.toFixed(0) ?? '–'}% · ${ups.runtimeMin?.toFixed(0) ?? '–'}분 · 부하 ${ups.loadPct?.toFixed(0) ?? '–'}%` : '연결 안 됨',
-    x: 676,
-    y: POWER_Y,
-    w: 170,
-    h: NODE_H,
     health: ups ? (ups.onBattery ? 'degraded' : 'up') : 'none',
     title: ups ? `${ups.model} · ${ups.status}` : 'UPS 상태를 읽지 못함',
   });
   const host = d.host;
   const running = d.guests.filter((g) => g.status === 'running').length;
-  out.push({
-    id: 'host',
+  at('host', {
     label: 'Proxmox 호스트',
     icon: '🧱',
-    sub: host ? `CPU ${host.cpuPct.toFixed(0)}% · RAM ${(host.mem.used / 1024 ** 3).toFixed(0)} / ${(host.mem.total / 1024 ** 3).toFixed(0)} GB · VM·LXC ${running}개 실행` : undefined,
-    x: 940,
-    y: POWER_Y,
-    w: 370,
-    h: NODE_H,
+    sub: host ? `CPU ${host.cpuPct.toFixed(0)}% · RAM ${(host.mem.used / 1024 ** 3).toFixed(0)} / ${(host.mem.total / 1024 ** 3).toFixed(0)} GB · ${running}개 실행` : undefined,
     health: host ? 'up' : 'none',
     url: 'https://ve.kimhwan.kr/',
+    select: byId('proxmox') ? 'proxmox' : undefined,
     title: host ? `${host.pveVersion} · 가동 ${Math.floor(host.uptimeSec / 86400)}일` : '',
   });
-
   const gw = byId('gateway');
-  out.push({ id: 'gateway', label: 'nginx 관문', icon: '🚪', sub: gw?.latencyMs !== null && gw?.latencyMs !== undefined ? `TLS 종료 · ${gw.latencyMs} ms` : 'TLS 종료', x: 580, y: MID_Y - NODE_H / 2, w: 180, h: NODE_H, health: healthOf('gateway'), title: '모든 공개 도메인이 지나는 관문 (LXC 101)' });
+  at('gateway', { label: 'nginx 관문', icon: '🚪', sub: gw?.latencyMs !== null && gw?.latencyMs !== undefined ? `TLS 종료 · ${gw.latencyMs} ms` : 'TLS 종료', health: healthOf('gateway'), select: gw ? 'gateway' : undefined, title: '모든 공개 도메인이 지나는 관문 (LXC 101)' });
 
-  const place = (ids: string[], col: typeof COL_APPS) => {
+  const place = (ids: string[], col: Layout['apps']) => {
     ids.forEach((id, i) => {
       const s = byId(id);
       if (!s) {
         return;
       }
       const r = rpm(id);
-      const sub = r > 0 ? trafficLabel(r, bps(id)) : s.latencyMs !== null ? `${s.latencyMs} ms · 대기 중` : undefined;
-      out.push({ id, label: s.name, icon: s.icon, sub, x: col.x, y: col.top + i * col.step, w: col.w, h: NODE_H, health: s.health, url: s.url, title: `${s.description} · ${labelOf(s.health)}` });
+      const sub = r > 0 ? trafficLabel(r, bpsOut(id), bpsIn(id)) : s.latencyMs !== null ? `${s.latencyMs} ms · 대기 중` : undefined;
+      out.push({ id, label: s.name, icon: s.icon, sub, x: col.x, y: col.top + i * col.step, w: col.w, h: NODE_H, health: s.health, url: s.url, select: id, title: `${s.description} · ${labelOf(s.health)}` });
     });
   };
-  place(APP_ORDER.filter((id) => byId(id)), COL_APPS);
-  place(PLATFORM_ORDER.filter((id) => byId(id)), COL_PLATFORM);
+  place(APP_ORDER.filter((id) => byId(id)), lay.apps);
+  place(PLATFORM_ORDER.filter((id) => byId(id)), lay.platform);
   return out;
 });
 
@@ -228,7 +296,7 @@ function nodeById(list: FlowNode[], id: string): FlowNode | undefined {
   return list.find((n) => n.id === id);
 }
 
-function curve(a: FlowNode, b: FlowNode): string {
+function curveLR(a: FlowNode, b: FlowNode): string {
   const ax = a.x + a.w;
   const ay = a.y + a.h / 2;
   const bx = b.x;
@@ -237,12 +305,16 @@ function curve(a: FlowNode, b: FlowNode): string {
   return `M ${ax} ${ay} C ${mx} ${ay}, ${mx} ${by}, ${bx} ${by}`;
 }
 
+function lineTB(a: FlowNode, b: FlowNode): string {
+  const x = a.x + a.w / 2;
+  return `M ${x} ${a.y + a.h} L ${b.x + b.w / 2} ${b.y}`;
+}
+
 function widthFor(r: number): number {
   return Math.min(1.8 + Math.log10(r + 1) * 1.1, 4.2);
 }
 
 function durationFor(r: number): string {
-  // few fixed speeds: a changed duration restarts the dash animation, so keep it stable across refreshes
   if (r >= 60) {
     return '0.6s';
   }
@@ -258,6 +330,7 @@ function durationFor(r: number): string {
 const edges = computed<FlowEdge[]>(() => {
   const ns = nodes.value;
   const d = props.data;
+  const lay = L.value;
   const out: FlowEdge[] = [];
   const n = (id: string) => nodeById(ns, id);
   const visitor = n('visitor');
@@ -268,83 +341,111 @@ const edges = computed<FlowEdge[]>(() => {
     return out;
   }
 
-  // ---- traffic: visitor -> cloudflare -> gateway (+ direct arc), then a bus with one short branch per service
   let proxied = 0;
-  let proxiedB = 0;
+  let proxiedOut = 0;
+  let proxiedIn = 0;
   let direct = 0;
-  let directB = 0;
+  let directOut = 0;
+  let directIn = 0;
   for (const s of d.services) {
     if (DIRECT.has(s.id)) {
       direct += rpm(s.id);
-      directB += bps(s.id);
+      directOut += bpsOut(s.id);
+      directIn += bpsIn(s.id);
     } else {
       proxied += rpm(s.id);
-      proxiedB += bps(s.id);
+      proxiedOut += bpsOut(s.id);
+      proxiedIn += bpsIn(s.id);
     }
   }
   const total = proxied + direct;
-
-  out.push({ id: 'v-cf', d: curve(visitor, cf), kind: 'traffic', active: proxied > 0, dead: false, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare 경유 ${fmtRate(proxied)}`, label: trafficLabel(proxied, proxiedB), lx: (visitor.x + visitor.w + cf.x) / 2, ly: MID_Y - 12, anchor: 'middle' });
-  out.push({ id: 'cf-gw', d: curve(cf, gw), kind: 'traffic', active: proxied > 0 && gwUp, dead: !gwUp, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare → 관문 ${fmtRate(proxied)}`, label: trafficLabel(proxied, proxiedB), lx: (cf.x + cf.w + gw.x) / 2, ly: MID_Y - 12, anchor: 'middle' });
-  const vx = visitor.x + visitor.w / 2;
-  out.push({ id: 'v-gw', d: `M ${vx} ${visitor.y} C ${vx} 270, ${gw.x + 40} 270, ${gw.x + 40} ${gw.y}`, kind: 'traffic', active: direct > 0 && gwUp, dead: !gwUp, width: widthFor(direct), duration: durationFor(direct), title: `직결 (Cloudflare 를 거치지 않는 NAS·Proxmox·메일·VPN) ${fmtRate(direct)}`, label: direct > 0 ? `직결 ${trafficLabel(direct, directB)}` : undefined, lx: (vx + gw.x + 40) / 2, ly: 276, anchor: 'middle' });
-
-  // gateway -> trunk 1 (apps), trunk 1 -> bus -> trunk 2 (platform)
   const apps = APP_ORDER.map((id) => n(id)).filter((x): x is FlowNode => !!x);
   const platform = PLATFORM_ORDER.map((id) => n(id)).filter((x): x is FlowNode => !!x);
   const lastApp = apps[apps.length - 1];
   const lastPlatform = platform[platform.length - 1];
-  if (lastApp && lastPlatform) {
-    out.push({ id: 'gw-trunk', d: `M ${gw.x + gw.w} ${MID_Y} L ${TRUNK1_X} ${MID_Y}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(total) + 1, duration: '1s', title: `관문 → 내부 서비스 ${fmtRate(total)}` });
-    out.push({ id: 'trunk1', d: `M ${TRUNK1_X} ${BUS_Y} L ${TRUNK1_X} ${lastApp.y + lastApp.h / 2}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(total) + 1, duration: '1s', title: '서비스 간선' });
-    out.push({ id: 'bus', d: `M ${TRUNK1_X} ${BUS_Y} L ${TRUNK2_X} ${BUS_Y}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(direct + rpmSum(platform)) + 0.5, duration: '1s', title: '인프라 간선' });
-    out.push({ id: 'trunk2', d: `M ${TRUNK2_X} ${BUS_Y} L ${TRUNK2_X} ${lastPlatform.y + lastPlatform.h / 2}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(rpmSum(platform)) + 0.5, duration: '1s', title: '인프라 간선' });
-  }
-  const branch = (target: FlowNode, trunkX: number) => {
-    const s = byId(target.id);
-    if (!s) {
-      return;
-    }
-    const r = rpm(s.id);
-    const dead = s.health === 'down' || !gwUp;
-    const y = target.y + target.h / 2;
-    out.push({ id: `br-${s.id}`, d: `M ${trunkX} ${y} L ${target.x} ${y}`, kind: 'traffic', active: r > 0 && !dead, dead, width: widthFor(r), duration: durationFor(r), title: `${s.name}: ${r > 0 ? `${fmtRate(r)} · ${fmtBps(bps(s.id)) || '0 B/s'}` : '최근 요청 없음'}` });
-  };
-  apps.forEach((t) => branch(t, TRUNK1_X));
-  platform.forEach((t) => branch(t, TRUNK2_X));
 
-  // ---- power
+  if (!narrow.value) {
+    const midY = gw.y + gw.h / 2;
+    out.push({ id: 'v-cf', d: curveLR(visitor, cf), kind: 'traffic', active: proxied > 0, dead: false, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare 경유 ${fmtRate(proxied)}`, label: trafficLabel(proxied, proxiedOut, proxiedIn), lx: (visitor.x + visitor.w + cf.x) / 2, ly: midY - 12, anchor: 'middle' });
+    out.push({ id: 'cf-gw', d: curveLR(cf, gw), kind: 'traffic', active: proxied > 0 && gwUp, dead: !gwUp, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare → 관문 ${fmtRate(proxied)}`, label: trafficLabel(proxied, proxiedOut, proxiedIn), lx: (cf.x + cf.w + gw.x) / 2, ly: midY - 12, anchor: 'middle' });
+    const vx = visitor.x + visitor.w / 2;
+    out.push({ id: 'v-gw', d: `M ${vx} ${visitor.y} C ${vx} 270, ${gw.x + 40} 270, ${gw.x + 40} ${gw.y}`, kind: 'traffic', active: direct > 0 && gwUp, dead: !gwUp, width: widthFor(direct), duration: durationFor(direct), title: `직결 (Cloudflare 를 거치지 않는 NAS·Proxmox·메일·VPN) ${fmtRate(direct)}`, label: direct > 0 ? `직결 ${trafficLabel(direct, directOut, directIn)}` : undefined, lx: (vx + gw.x + 40) / 2, ly: 276, anchor: 'middle' });
+    if (lastApp && lastPlatform) {
+      out.push({ id: 'gw-trunk', d: `M ${gw.x + gw.w} ${midY} L ${lay.trunk1} ${midY}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(total) + 1, duration: '1s', title: `관문 → 내부 서비스 ${fmtRate(total)}` });
+      out.push({ id: 'trunk1', d: `M ${lay.trunk1} ${lay.busY} L ${lay.trunk1} ${lastApp.y + lastApp.h / 2}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(total) + 1, duration: '1s', title: '서비스 간선' });
+      out.push({ id: 'bus', d: `M ${lay.trunk1} ${lay.busY} L ${lay.trunk2} ${lay.busY}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(rpmSum(platform)) + 0.5, duration: '1s', title: '인프라 간선' });
+      out.push({ id: 'trunk2', d: `M ${lay.trunk2} ${lay.busY} L ${lay.trunk2} ${lastPlatform.y + lastPlatform.h / 2}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(rpmSum(platform)) + 0.5, duration: '1s', title: '인프라 간선' });
+    }
+    apps.forEach((t) => branch(out, t, lay.trunk1, gwUp));
+    platform.forEach((t) => branch(out, t, lay.trunk2, gwUp));
+  } else {
+    const cx = visitor.x + visitor.w / 2;
+    const labelY = visitor.y + visitor.h + 15;
+    out.push({ id: 'v-cf', d: lineTB(visitor, cf), kind: 'traffic', active: proxied > 0, dead: false, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare 경유 ${fmtRate(proxied)}`, label: trafficLabel(proxied, proxiedOut, proxiedIn), lx: cx + 10, ly: labelY, anchor: 'start' });
+    const rx = cf.x + cf.w;
+    const cy = cf.y + cf.h / 2;
+    const gy = gw.y + gw.h / 2;
+    out.push({ id: 'cf-gw', d: `M ${rx} ${cy} C ${rx + 50} ${cy}, ${rx + 50} ${gy}, ${rx} ${gy}`, kind: 'traffic', active: proxied > 0 && gwUp, dead: !gwUp, width: widthFor(proxied), duration: durationFor(proxied), title: `Cloudflare → 관문 ${fmtRate(proxied)}` });
+    const lx0 = visitor.x;
+    const vy = visitor.y + visitor.h / 2;
+    out.push({ id: 'v-gw', d: `M ${lx0} ${vy} C ${lx0 - 40} ${vy}, ${lx0 - 40} ${gy}, ${lx0} ${gy}`, kind: 'traffic', active: direct > 0 && gwUp, dead: !gwUp, width: widthFor(direct), duration: durationFor(direct), title: `직결 (NAS·Proxmox·메일·VPN) ${fmtRate(direct)}`, label: direct > 0 ? `직결 ${fmtRate(direct)}` : undefined, lx: visitor.x, ly: labelY, anchor: 'start' });
+    const last = lastPlatform ?? lastApp;
+    if (last) {
+      const gx = gw.x + 60;
+      const ty = gw.y + gw.h + 24;
+      out.push({ id: 'gw-trunk', d: `M ${gx} ${gw.y + gw.h} L ${gx} ${ty} L ${lay.trunk1} ${ty}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(total) + 1, duration: '1s', title: `관문 → 내부 서비스 ${fmtRate(total)}` });
+      out.push({ id: 'trunk1', d: `M ${lay.trunk1} ${ty} L ${lay.trunk1} ${last.y + last.h / 2}`, kind: 'traffic', active: false, dead: !gwUp, trunk: true, width: widthFor(total) + 1, duration: '1s', title: '간선' });
+    }
+    [...apps, ...platform].forEach((t) => branch(out, t, lay.trunk1, gwUp));
+  }
+
   const power = n('power');
   const ups = n('ups');
   const host = n('host');
   if (power && ups && host) {
     const onBattery = d.ups?.onBattery ?? false;
-    out.push({ id: 'p-ups', d: curve(power, ups), kind: 'power', active: !!d.ups && !onBattery, dead: onBattery, width: 2.6, duration: '1.2s', title: onBattery ? '정전: 상용 전원 끊김' : '상용 전원 정상' });
-    out.push({ id: 'ups-host', d: curve(ups, host), kind: 'power', active: !!d.ups, dead: false, width: 2.6, duration: onBattery ? '0.5s' : '1.2s', title: onBattery ? '배터리로 호스트에 전원 공급 중' : 'UPS 경유 전원 공급', label: d.ups?.nominalPowerW ? `${d.ups.loadPct?.toFixed(0) ?? '–'}% of ${d.ups.nominalPowerW} W` : undefined, lx: (ups.x + ups.w + host.x) / 2, ly: POWER_Y + NODE_H / 2 - 9, anchor: 'middle' });
-  }
-
-  // ---- deploy (optional overlay)
-  const gh = n('github');
-  const dh = n('dockerhub');
-  const jenkins = n('jenkins');
-  if (gh && dh && jenkins) {
-    const jUp = healthOf('jenkins') === 'up';
-    out.push({ id: 'gh-j', d: `M ${gh.x + gh.w} ${gh.y + gh.h / 2 - 10} C ${gh.x + gh.w + 160} ${gh.y - 110}, ${jenkins.x - 40} ${jenkins.y + jenkins.h / 2 + 120}, ${jenkins.x + 30} ${jenkins.y + jenkins.h}`, kind: 'deploy', active: jUp, dead: !jUp, width: 1.8, duration: '2.4s', title: 'GitHub push → Jenkins 웹훅' });
-    out.push({ id: 'j-dh', d: `M ${jenkins.x + jenkins.w / 2} ${jenkins.y + jenkins.h} C ${jenkins.x + jenkins.w / 2} 560, ${dh.x + dh.w + 120} ${dh.y - 80}, ${dh.x + dh.w} ${dh.y + dh.h / 2 - 10}`, kind: 'deploy', active: jUp, dead: !jUp, width: 1.8, duration: '2.4s', title: 'Jenkins → Docker Hub 이미지 푸시' });
-    if (lastApp) {
-      out.push({ id: 'dh-apps', d: `M ${dh.x + dh.w} ${dh.y + dh.h / 2 + 10} C ${dh.x + dh.w + 110} ${dh.y + 60}, ${COL_APPS.x - 90} ${lastApp.y + lastApp.h + 60}, ${COL_APPS.x + COL_APPS.w / 2} ${lastApp.y + lastApp.h}`, kind: 'deploy', active: jUp, dead: false, width: 1.8, duration: '2.4s', title: 'VM 이 Docker Hub 에서 이미지를 받아 compose 로 배포' });
+    out.push({ id: 'p-ups', d: curveLR(power, ups), kind: 'power', active: !!d.ups && !onBattery, dead: onBattery, width: 2.6, duration: '1.2s', title: onBattery ? '정전: 상용 전원 끊김' : '상용 전원 정상' });
+    const loadLabel = d.ups?.nominalPowerW ? `${d.ups.loadPct?.toFixed(0) ?? '–'}% of ${d.ups.nominalPowerW} W` : undefined;
+    if (!narrow.value) {
+      out.push({ id: 'ups-host', d: curveLR(ups, host), kind: 'power', active: !!d.ups, dead: false, width: 2.6, duration: onBattery ? '0.5s' : '1.2s', title: onBattery ? '배터리로 호스트에 전원 공급 중' : 'UPS 경유 전원 공급', label: loadLabel, lx: (ups.x + ups.w + host.x) / 2, ly: ups.y + ups.h / 2 - 9, anchor: 'middle' });
+    } else {
+      const ux = ups.x + ups.w / 2;
+      out.push({ id: 'ups-host', d: `M ${ux} ${ups.y + ups.h} L ${ux} ${host.y}`, kind: 'power', active: !!d.ups, dead: false, width: 2.6, duration: onBattery ? '0.5s' : '1.2s', title: 'UPS 경유 전원 공급', label: loadLabel, lx: ux + 8, ly: ups.y + ups.h + 16, anchor: 'start' });
     }
   }
 
-  // ---- logs (optional overlay)
-  const elk = n('elk');
-  if (elk) {
-    const elkUp = healthOf('elk') === 'up';
-    const gx = gw.x + gw.w / 2;
-    out.push({ id: 'gw-elk', d: `M ${gx} ${gw.y + gw.h} C ${gx} 640, ${elk.x + elk.w / 2} 640, ${elk.x + elk.w / 2} ${elk.y + elk.h}`, kind: 'logs', active: elkUp && gwUp, dead: !elkUp, width: 1.8, duration: '2s', title: 'filebeat → Logstash → Elasticsearch → Kibana' });
+  if (!narrow.value) {
+    const gh = n('github');
+    const dh = n('dockerhub');
+    const jenkins = n('jenkins');
+    if (gh && dh && jenkins) {
+      const jUp = healthOf('jenkins') === 'up';
+      out.push({ id: 'gh-j', d: `M ${gh.x + gh.w} ${gh.y + gh.h / 2 - 10} C ${gh.x + gh.w + 160} ${gh.y - 110}, ${jenkins.x - 40} ${jenkins.y + jenkins.h / 2 + 120}, ${jenkins.x + 30} ${jenkins.y + jenkins.h}`, kind: 'deploy', active: jUp, dead: !jUp, width: 1.8, duration: '2.4s', title: 'GitHub push → Jenkins 웹훅' });
+      out.push({ id: 'j-dh', d: `M ${jenkins.x + jenkins.w / 2} ${jenkins.y + jenkins.h} C ${jenkins.x + jenkins.w / 2} 560, ${dh.x + dh.w + 120} ${dh.y - 80}, ${dh.x + dh.w} ${dh.y + dh.h / 2 - 10}`, kind: 'deploy', active: jUp, dead: !jUp, width: 1.8, duration: '2.4s', title: 'Jenkins → Docker Hub 이미지 푸시' });
+      if (lastApp) {
+        out.push({ id: 'dh-apps', d: `M ${dh.x + dh.w} ${dh.y + dh.h / 2 + 10} C ${dh.x + dh.w + 110} ${dh.y + 60}, ${lay.apps.x - 90} ${lastApp.y + lastApp.h + 60}, ${lay.apps.x + lay.apps.w / 2} ${lastApp.y + lastApp.h}`, kind: 'deploy', active: jUp, dead: false, width: 1.8, duration: '2.4s', title: 'VM 이 Docker Hub 에서 이미지를 받아 compose 로 배포' });
+      }
+    }
+    const elk = n('elk');
+    if (elk) {
+      const elkUp = healthOf('elk') === 'up';
+      const gx = gw.x + gw.w / 2;
+      out.push({ id: 'gw-elk', d: `M ${gx} ${gw.y + gw.h} C ${gx} 640, ${elk.x + elk.w / 2} 640, ${elk.x + elk.w / 2} ${elk.y + elk.h}`, kind: 'logs', active: elkUp && gwUp, dead: !elkUp, width: 1.8, duration: '2s', title: 'filebeat → Logstash → Elasticsearch → Kibana' });
+    }
   }
   return out;
 });
+
+function branch(out: FlowEdge[], target: FlowNode, trunkX: number, gwUp: boolean) {
+  const s = byId(target.id);
+  if (!s) {
+    return;
+  }
+  const r = rpm(s.id);
+  const dead = s.health === 'down' || !gwUp;
+  const y = target.y + target.h / 2;
+  out.push({ id: `br-${s.id}`, d: `M ${trunkX} ${y} L ${target.x} ${y}`, kind: 'traffic', active: r > 0 && !dead, dead, width: widthFor(r), duration: durationFor(r), title: `${s.name}: ${r > 0 ? `${fmtRate(r)} · ↑${fmtBps(bpsOut(s.id))} ↓${fmtBps(bpsIn(s.id))}` : '최근 요청 없음'}` });
+}
 
 const visibleEdges = computed(() => edges.value.filter((e) => show[e.kind]));
 
@@ -360,7 +461,6 @@ function labelOf(h: Health): string {
 <style scoped>
 .flow-map {
   width: 100%;
-  overflow-x: auto;
 }
 
 .toggles {
@@ -392,7 +492,6 @@ function labelOf(h: Health): string {
 
 .flow-svg {
   width: 100%;
-  min-width: 960px;
   height: auto;
   display: block;
   font-family: var(--base-font-family);
@@ -445,9 +544,9 @@ function labelOf(h: Health): string {
   animation: flow18 linear infinite;
 }
 
-.edge.deploy.active { stroke-dasharray: 4 9; animation-name: flow13; }   /* period 13 */
-.edge.logs.active { stroke-dasharray: 2 8; animation-name: flow10; }     /* period 10 */
-.edge.power.active { stroke-dasharray: 11 9; animation-name: flow20; }   /* period 20 */
+.edge.deploy.active { stroke-dasharray: 4 9; animation-name: flow13; }
+.edge.logs.active { stroke-dasharray: 2 8; animation-name: flow10; }
+.edge.power.active { stroke-dasharray: 11 9; animation-name: flow20; }
 
 .edge.dead {
   stroke: #f85149;
@@ -480,7 +579,7 @@ function labelOf(h: Health): string {
   user-select: none;
 }
 
-.node.linked a {
+.node.linked {
   cursor: pointer;
 }
 
@@ -512,6 +611,10 @@ function labelOf(h: Health): string {
   fill: var(--base-color);
   opacity: 0.65;
 }
+
+.flow-svg.narrow .node-title { font-size: 16px; }
+.flow-svg.narrow .node-sub { font-size: 12.5px; }
+.flow-svg.narrow .edge-label { font-size: 11.5px; }
 
 .sw {
   display: inline-block;
