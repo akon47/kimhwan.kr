@@ -15,7 +15,7 @@ export interface Service {
 export const serverSince = '2022.09';
 
 export const serverSpecs: ServerSpec[] = [
-  { key: 'os', title: 'OS', lines: ['Proxmox Virtual Environment 7.4'] },
+  { key: 'os', title: 'OS', lines: ['Proxmox Virtual Environment 8.4'] },
   { key: 'processor', title: 'CPU', lines: ['INTEL Core i5-12400'] },
   { key: 'memory', title: 'MEMORY', lines: ['DDR4 16GB PC4-25600 x 2', 'DDR4 32GB PC4-25600 x 2'] },
   { key: 'ssd', title: 'STORAGE', lines: ['SAMSUNG 980 NVMe M.2 SSD 1 TB', 'Western Digital HDD 8 TB'] },
@@ -28,7 +28,9 @@ export const services: Service[] = [
   { name: 'Hwanscord', url: 'https://hwanscord.kimhwan.kr/' },
   { name: 'ShootGame', url: 'https://shootgame.kimhwan.kr/' },
   { name: 'ScreenShare', url: 'https://screenshare.kimhwan.kr/' },
-  { name: 'VisitCounter', url: 'https://github.com/akon47/visit-counter' },
+  { name: 'VisitCounter', url: 'https://counter.kimhwan.kr/' },
+  { name: 'Funcia', url: 'https://funcia.kimhwan.kr/' },
+  { name: 'n8n', url: 'https://n8n.kimhwan.kr/' },
   { name: 'Jenkins', url: 'https://build.kimhwan.kr/' },
   { name: 'Postfix' },
   { name: 'Nginx API Gateway' },

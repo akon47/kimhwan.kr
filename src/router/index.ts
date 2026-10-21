@@ -30,6 +30,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/status',
+      name: 'Status',
+      component: () => import('@/views/StatusView.vue'),
+      meta: {
+        title: '📡 Live Status',
+      },
+    },
+    {
       path: '/server-info',
       name: 'ServerInfo',
       component: () => import('@/views/ServerInfoView.vue'),

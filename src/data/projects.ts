@@ -53,7 +53,8 @@ export const projects: Project[] = [
     title: 'VisitCounter',
     summary: 'The visit-counter project was created because I wanted to count the number of visitors to a specific page. There is an open source project called hits, but there is a problem that the hits value continuously increases when refreshed because there is no handling of duplicate IPs, so I created it myself.',
     githubUrls: ['https://github.com/akon47/visit-counter'],
-    tags: ['NodeJS', 'MongoDB', 'Docker'],
+    demoUrl: 'https://counter.kimhwan.kr/',
+    tags: ['TypeScript', 'Hono', 'SQLite', 'Docker', 'Jenkins'],
   },
   {
     title: 'Screen Share',

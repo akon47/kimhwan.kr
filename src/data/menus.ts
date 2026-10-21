@@ -6,6 +6,11 @@ export interface Menu {
 
 export const menus: Menu[] = [
   {
+    title: '📡 Live Status',
+    summary: 'Real-time health of every service running on my home server: uptime, host resources, UPS and backups.',
+    to: '/status',
+  },
+  {
     title: '🚀 OpenSource Projects',
     summary: 'These are several projects that I personally developed and published on GitHub.',
     to: '/opensource-projects',
