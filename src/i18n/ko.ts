@@ -63,7 +63,7 @@ const ko = {
   home: {
     heroBefore: '안녕하세요, ',
     heroAfter: '입니다',
-    lead: '소프트웨어 개발자. 데스크톱 앱과 웹 서비스를 만듭니다.',
+    lead: '소프트웨어 개발자입니다. 틈틈이 만든 것들을 여기에 모아 둡니다.',
     viewProjects: '프로젝트 보기',
     openSource: '오픈소스',
     recentProjects: '최근 프로젝트',
