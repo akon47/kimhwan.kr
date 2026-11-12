@@ -2,7 +2,7 @@
   <Teleport to="body">
     <Transition name="palette">
       <div v-if="isOpen" class="backdrop" @click.self="close">
-        <div class="palette" role="dialog" aria-modal="true" aria-label="빠른 이동">
+        <div class="palette" role="dialog" aria-modal="true" :aria-label="t.palette.label">
           <div class="palette__search">
             <AppIcon name="search" :size="16"/>
             <input
@@ -10,7 +10,7 @@
               v-model="query"
               class="palette__input"
               type="text"
-              placeholder="페이지, 프로젝트, 링크 검색…"
+              :placeholder="t.palette.placeholder"
               role="combobox"
               aria-expanded="true"
               aria-controls="command-list"
@@ -41,7 +41,7 @@
                 <span v-if="command.hint" class="command__hint">{{ command.hint }}</span>
               </li>
             </template>
-            <li v-if="!matches.length" class="palette__empty" role="presentation">"{{ query }}"에 맞는 항목이 없습니다.</li>
+            <li v-if="!matches.length" class="palette__empty" role="presentation">{{ t.palette.empty(query) }}</li>
           </ul>
         </div>
       </div>
@@ -57,11 +57,12 @@ import type { IconName } from '@/components/ui/icons';
 import { useCommandPalette } from '@/composables/useCommandPalette';
 import { useTheme } from '@/composables/useTheme';
 import { navItems, socialLinks } from '@/config/site';
-import { projectKindLabels, projects } from '@/data/projects';
+import { projects } from '@/data/projects';
+import { useI18n } from '@/i18n';
 
 /**
  * Keyboard launcher: Ctrl+K (⌘K) opens it anywhere; type to filter, ↑/↓ to move, Enter to go.
- * Lists the pages, every project and the external links, plus a few actions.
+ * Lists the pages, every project and the external links, plus a few actions (theme, language).
  */
 interface Command {
   id: string;
@@ -76,54 +77,67 @@ interface Command {
 
 const { isOpen, close, toggle } = useCommandPalette();
 const { isDark, toggleTheme } = useTheme();
+const { t, toggleLocale } = useI18n();
 const router = useRouter();
-
-const NAV_ICONS: Record<string, IconName> = {
-  '/projects': 'code',
-  '/status': 'activity',
-  '/guestbook': 'grid',
-  '/about': 'user',
-};
 
 function openExternal(url: string) {
   window.open(url, '_blank', 'noopener');
 }
 
-const commands = computed<Command[]>(() => [
-  { id: 'page-home', group: '페이지', label: 'Home', icon: 'home', keywords: '홈 메인', run: () => void router.push('/') },
-  ...navItems.map<Command>((item) => ({
-    id: `page-${item.to}`,
-    group: '페이지',
-    label: item.label,
-    icon: NAV_ICONS[item.to] ?? 'arrow-right',
-    keywords: item.to,
-    run: () => void router.push(item.to),
-  })),
-  ...projects.map<Command>((project) => ({
-    id: `project-${project.title}`,
-    group: '프로젝트',
-    label: project.title,
-    hint: project.primaryLink?.label ?? 'GitHub',
-    icon: 'arrow-up-right',
-    keywords: `${projectKindLabels[project.kind]} ${project.tags.join(' ')}`,
-    run: () => openExternal(project.primaryLink?.url ?? project.githubUrls[0] ?? '/projects'),
-  })),
-  ...socialLinks.map<Command>((link) => ({
-    id: `link-${link.label}`,
-    group: '링크',
-    label: link.label,
-    icon: link.icon,
-    run: () => openExternal(link.href),
-  })),
-  {
-    id: 'action-theme',
-    group: '동작',
-    label: isDark.value ? '라이트 모드로 전환' : '다크 모드로 전환',
-    icon: isDark.value ? 'sun' : 'moon',
-    keywords: 'theme dark light 테마',
-    run: toggleTheme,
-  },
-]);
+const commands = computed<Command[]>(() => {
+  const { palette, nav, projects: projectTexts, theme, language } = t.value;
+  return [
+    {
+      id: 'page-home',
+      group: palette.groups.pages,
+      label: nav.home,
+      icon: 'home',
+      keywords: palette.homeKeywords,
+      run: () => void router.push('/'),
+    },
+    ...navItems.map<Command>((item) => ({
+      id: `page-${item.to}`,
+      group: palette.groups.pages,
+      label: nav[item.key],
+      icon: item.icon,
+      // the address is the same in every language, so "status" finds the page whatever the menu says
+      keywords: item.to,
+      run: () => void router.push(item.to),
+    })),
+    ...projects.map<Command>((project) => ({
+      id: `project-${project.title}`,
+      group: palette.groups.projects,
+      label: project.title,
+      hint: project.primaryLink ? projectTexts.links[project.primaryLink.kind] : 'GitHub',
+      icon: 'arrow-up-right',
+      keywords: `${projectTexts.kinds[project.kind]} ${project.kind} ${project.tags.join(' ')}`,
+      run: () => openExternal(project.primaryLink?.url ?? project.githubUrls[0] ?? '/projects'),
+    })),
+    ...socialLinks.map<Command>((link) => ({
+      id: `link-${link.label}`,
+      group: palette.groups.links,
+      label: link.label,
+      icon: link.icon,
+      run: () => openExternal(link.href),
+    })),
+    {
+      id: 'action-theme',
+      group: palette.groups.actions,
+      label: isDark.value ? theme.toLight : theme.toDark,
+      icon: isDark.value ? 'sun' : 'moon',
+      keywords: palette.themeKeywords,
+      run: toggleTheme,
+    },
+    {
+      id: 'action-language',
+      group: palette.groups.actions,
+      label: language.switchTitle,
+      icon: 'languages',
+      keywords: palette.languageKeywords,
+      run: toggleLocale,
+    },
+  ];
+});
 
 /* ----- filtering ----- */
 const query = ref('');

@@ -20,23 +20,29 @@ export interface RemoteCursor {
   readonly chat: string | null;
 }
 
-export interface PixelEvent {
-  readonly x: number;
-  readonly y: number;
-  /** Palette index. */
-  readonly color: number;
-  /** Pixels painted since the board was created. */
-  readonly total: number;
+/** One message left in the guestbook. */
+export interface GuestbookEntry {
+  /** Increasing number: a newer entry always has a larger one. */
+  readonly id: number;
+  /** Empty when the visitor left the name blank. */
+  readonly name: string;
+  /** Plain text; may contain line breaks. */
+  readonly message: string;
+  /** ISO time. */
+  readonly at: string;
 }
 
-export interface CanvasBoard {
-  readonly width: number;
-  readonly height: number;
-  readonly palette: readonly string[];
-  readonly cooldownMs: number;
+/** One page of the guestbook (GET /api/live/guestbook), newest first. */
+export interface GuestbookPage {
+  readonly entries: readonly GuestbookEntry[];
+  /** Entries in the whole guestbook. */
   readonly total: number;
-  /** base64 of width × height palette indexes, row by row. */
-  readonly pixels: string;
+  /** Older entries exist beyond this page. */
+  readonly hasMore: boolean;
+  readonly maxNameLength: number;
+  readonly maxMessageLength: number;
+  /** How long a visitor waits between two messages. */
+  readonly cooldownMs: number;
 }
 
 /** A new image of a service was pushed to Docker Hub, i.e. it is being deployed. */
@@ -51,11 +57,11 @@ export interface DeployEvent {
 
 /** Server → client messages by type. */
 export interface ServerMessages {
-  WELCOME: { readonly id: string; readonly presence: Presence; readonly pixelCooldownMs: number };
+  WELCOME: { readonly id: string; readonly presence: Presence };
   PRESENCE: Presence;
   CURSORS: { readonly cursors: readonly RemoteCursor[] };
-  PIXEL: PixelEvent;
-  PIXEL_REJECTED: { readonly retryAfterMs: number };
+  GUESTBOOK: { readonly entry: GuestbookEntry; readonly total: number };
+  GUESTBOOK_DELETED: { readonly id: number; readonly total: number };
   DEPLOY: DeployEvent;
   PONG: Record<string, never>;
 }
@@ -67,7 +73,6 @@ export interface ClientMessages {
   /** Empty = my cursor is gone. */
   CURSOR: { x: number; y: number } | Record<string, never>;
   CHAT: { text: string };
-  PIXEL: { x: number; y: number; color: number };
   PING: Record<string, never>;
 }
 

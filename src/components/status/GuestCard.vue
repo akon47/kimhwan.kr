@@ -15,12 +15,12 @@
       </span>
       <span class="metric">
         <span class="metric__label">RAM</span>
-        <MeterBar :value="memoryPct" class="metric__bar" :label="`${guest.name} 메모리`"/>
+        <MeterBar :value="memoryPct" class="metric__bar" :label="t.status.guest.memory(guest.name)"/>
         {{ formatGb(guest.mem) }} / {{ formatGb(guest.maxmem) }} GB
       </span>
       <span class="metric metric--uptime">⏱ {{ formatUptime(guest.uptimeSec) }}</span>
     </div>
-    <div v-else class="guest__metrics">정지됨</div>
+    <div v-else class="guest__metrics">{{ t.status.guest.stopped }}</div>
   </li>
 </template>
 
@@ -28,10 +28,13 @@
 import { computed } from 'vue';
 import MeterBar from '@/components/ui/MeterBar.vue';
 import StatusDot from '@/components/ui/StatusDot.vue';
+import { useI18n } from '@/i18n';
 import type { GuestStatus } from '@/types/status';
 import { formatGb, formatUptime, percentOf } from '@/utils/format';
 
 const props = defineProps<{ guest: GuestStatus }>();
+
+const { t } = useI18n();
 
 const running = computed(() => props.guest.status === 'running');
 const memoryPct = computed(() => percentOf(props.guest.mem, props.guest.maxmem));

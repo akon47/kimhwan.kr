@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setLocale } from '@/i18n';
 import {
   EMPTY,
   formatAvailability,
@@ -11,6 +12,8 @@ import {
 } from './format';
 
 const GIB = 1024 ** 3;
+
+afterEach(() => setLocale('ko'));
 
 describe('percentOf', () => {
   it('rounds to a whole percent', () => {
@@ -31,18 +34,34 @@ describe('formatGb', () => {
 
 describe('formatUptime', () => {
   it('shows the two largest units', () => {
+    setLocale('ko');
     expect(formatUptime(2 * 86_400 + 3 * 3600 + 59)).toBe('2일 3시간');
     expect(formatUptime(3 * 3600 + 20 * 60)).toBe('3시간 20분');
     expect(formatUptime(59)).toBe('0분');
+  });
+
+  it('follows the language', () => {
+    setLocale('en');
+    expect(formatUptime(2 * 86_400 + 3 * 3600 + 59)).toBe('2d 3h');
+    expect(formatUptime(3 * 3600 + 20 * 60)).toBe('3h 20m');
+    expect(formatUptime(59)).toBe('0m');
   });
 });
 
 describe('formatSeconds', () => {
   it('handles each range and null', () => {
+    setLocale('ko');
     expect(formatSeconds(null)).toBe(EMPTY);
     expect(formatSeconds(42)).toBe('42초');
     expect(formatSeconds(185)).toBe('3분 5초');
     expect(formatSeconds(7800)).toBe('2시간 10분');
+  });
+
+  it('follows the language', () => {
+    setLocale('en');
+    expect(formatSeconds(42)).toBe('42s');
+    expect(formatSeconds(185)).toBe('3m 5s');
+    expect(formatSeconds(7800)).toBe('2h 10m');
   });
 });
 

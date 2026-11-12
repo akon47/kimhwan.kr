@@ -25,8 +25,8 @@
         v-model="draft"
         class="composer__input"
         :maxlength="MAX_CHAT_LENGTH"
-        placeholder="한마디 (Enter)"
-        aria-label="커서 옆에 띄울 한마디"
+        :placeholder="t.live.chatPlaceholder"
+        :aria-label="t.live.chatLabel"
         @keydown.esc.stop="composing = false"
         @blur="composing = false"
       >
@@ -45,6 +45,7 @@
 import { nextTick, onMounted, onUnmounted, reactive, ref, useTemplateRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useLive, useLiveMessage } from '@/composables/useLive';
+import { useI18n } from '@/i18n';
 
 /**
  * Other visitors' pointers on the page I am looking at, and mine sent to them (multiplayer cursors).
@@ -70,6 +71,7 @@ interface ShownCursor {
 }
 
 const { client, identity } = useLive();
+const { t } = useI18n();
 const route = useRoute();
 
 const enabled = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false;

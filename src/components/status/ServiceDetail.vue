@@ -1,7 +1,7 @@
 <template>
   <DetailPanel
     :title="service.name"
-    :subtitle="service.description"
+    :subtitle="serviceDescription(service)"
     :icon="service.icon"
     :badge="healthLabel(service.health)"
     :badge-tone="service.health"
@@ -9,7 +9,7 @@
   >
     <div v-if="service.url || service.repos?.length" class="links">
       <a v-if="service.url" :href="service.url" target="_blank" rel="noopener" class="btn btn--sm btn--primary">
-        열기
+        {{ t.common.open }}
         <AppIcon name="arrow-up-right" :size="14"/>
       </a>
       <a v-for="repo in service.repos" :key="repo" :href="repo" target="_blank" rel="noopener" class="btn btn--sm">
@@ -19,19 +19,19 @@
     </div>
 
     <div class="stats">
-      <StatTile compact label="가동률 24h" :value="formatAvailability(stats?.uptime24hPct)"/>
-      <StatTile compact label="가동률 30d" :value="formatAvailability(stats?.uptime30dPct)"/>
-      <StatTile compact label="응답 (지금 / 24h 평균)" :value="latencyText"/>
-      <StatTile compact :label="`최근 ${windowMinutes}분 트래픽`" :value="trafficText"/>
+      <StatTile compact :label="text.uptime24h" :value="formatAvailability(stats?.uptime24hPct)"/>
+      <StatTile compact :label="text.uptime30d" :value="formatAvailability(stats?.uptime30dPct)"/>
+      <StatTile compact :label="text.latency" :value="latencyText"/>
+      <StatTile compact :label="text.traffic(windowMinutes)" :value="trafficText"/>
     </div>
 
     <section v-if="stats?.latency24h.some((value) => value !== null)" class="section">
-      <h3 class="section__title">응답 시간 24h (ms)</h3>
+      <h3 class="section__title">{{ text.latencyChart }}</h3>
       <SparkLine :values="stats.latency24h" :width="440" :height="48" class="spark"/>
     </section>
 
     <section class="section">
-      <h3 class="section__title">점검 항목</h3>
+      <h3 class="section__title">{{ text.checks }}</h3>
       <ul class="checks">
         <li v-for="check in service.checks" :key="check.name" class="check" :class="{ 'check--failed': !check.ok }">
           <AppIcon :name="check.ok ? 'check' : 'close'" :size="14" class="check__mark"/>
@@ -51,9 +51,10 @@ import DetailPanel from '@/components/status/DetailPanel.vue';
 import StatTile from '@/components/status/StatTile.vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import SparkLine from '@/components/ui/SparkLine.vue';
+import { useI18n } from '@/i18n';
 import type { ServiceStats, ServiceStatus } from '@/types/status';
 import { EMPTY, formatAvailability, formatBps, formatRate } from '@/utils/format';
-import { healthLabel, type TrafficRate } from '@/utils/status';
+import { healthLabel, serviceDescription, type TrafficRate } from '@/utils/status';
 
 const props = defineProps<{
   service: ServiceStatus;
@@ -63,6 +64,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{ close: [] }>();
+
+const { t } = useI18n();
+const text = computed(() => t.value.status.service);
 
 const latencyText = computed(() => `${props.service.latencyMs ?? EMPTY} ms / ${props.stats?.avgLatency24hMs ?? EMPTY} ms`);
 

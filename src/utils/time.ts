@@ -1,23 +1,25 @@
+import { messages } from '@/i18n';
+
 const MINUTE = 60;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-/** "방금 전", "5분 전", "3시간 전", "2일 전", then the date. */
+/** "just now", "5 minutes ago", "3 hours ago", "2 days ago", then the date; worded in the current language. */
 export function formatRelativeTime(iso: string, now: number = Date.now()): string {
+  const time = messages.value.time;
   const then = new Date(iso).getTime();
   const seconds = Math.max(0, Math.round((now - then) / 1000));
   if (seconds < MINUTE) {
-    return '방금 전';
+    return time.justNow;
   }
   if (seconds < HOUR) {
-    return `${Math.floor(seconds / MINUTE)}분 전`;
+    return time.minutesAgo(Math.floor(seconds / MINUTE));
   }
   if (seconds < DAY) {
-    return `${Math.floor(seconds / HOUR)}시간 전`;
+    return time.hoursAgo(Math.floor(seconds / HOUR));
   }
   if (seconds < 30 * DAY) {
-    return `${Math.floor(seconds / DAY)}일 전`;
+    return time.daysAgo(Math.floor(seconds / DAY));
   }
-  const date = new Date(then);
-  return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`;
+  return time.date(new Date(then));
 }

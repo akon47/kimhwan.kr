@@ -5,12 +5,12 @@
         <AppIcon :name="kindIcon" :size="16"/>
       </span>
       <h3 class="project__title">{{ project.title }}</h3>
-      <span class="project__kind">{{ projectKindLabels[project.kind] }}</span>
+      <span class="project__kind">{{ t.projects.kinds[project.kind] }}</span>
     </header>
 
-    <p class="project__summary">{{ project.summary }}</p>
+    <p class="project__summary">{{ project.summary[locale] }}</p>
 
-    <ul class="project__tags" aria-label="기술 스택">
+    <ul class="project__tags" :aria-label="t.projects.stack">
       <li v-for="tag in project.tags" :key="tag" class="tag">{{ tag }}</li>
     </ul>
 
@@ -22,7 +22,7 @@
         target="_blank"
         rel="noopener"
       >
-        {{ project.primaryLink.label }}
+        {{ t.projects.links[project.primaryLink.kind] }}
         <AppIcon name="arrow-up-right" :size="14"/>
       </a>
       <a
@@ -45,11 +45,14 @@
 import { computed } from 'vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import type { IconName } from '@/components/ui/icons';
-import { projectKindLabels, type Project, type ProjectKind } from '@/data/projects';
+import type { Project, ProjectKind } from '@/data/projects';
+import { useI18n } from '@/i18n';
 
 const props = defineProps<{
   project: Project;
 }>();
+
+const { t, locale } = useI18n();
 
 const KIND_ICONS: Record<ProjectKind, IconName> = {
   desktop: 'monitor',
@@ -107,7 +110,6 @@ function repoName(url: string): string {
   flex: 1;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
-  word-break: normal;
 }
 
 .project__tags {

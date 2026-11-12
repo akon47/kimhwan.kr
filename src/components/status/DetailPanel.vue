@@ -17,7 +17,7 @@
             <p v-if="subtitle" class="head__desc">{{ subtitle }}</p>
           </div>
           <span v-if="badge" class="badge" :class="badgeTone ? `badge--${badgeTone}` : undefined">{{ badge }}</span>
-          <button type="button" class="btn btn--ghost btn--icon" aria-label="닫기" @click="emit('close')">
+          <button type="button" class="btn btn--ghost btn--icon" :aria-label="t.common.close" @click="emit('close')">
             <AppIcon name="close"/>
           </button>
         </header>
@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, useTemplateRef } from 'vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
+import { useI18n } from '@/i18n';
 import type { Health } from '@/types/status';
 
 /** Modal shell for the dashboard's detail views. Closes on Escape, backdrop click or the close button. */
@@ -48,6 +49,8 @@ withDefaults(
 );
 
 const emit = defineEmits<{ close: [] }>();
+
+const { t } = useI18n();
 
 const panel = useTemplateRef<HTMLElement>('panel');
 let previousFocus: Element | null = null;

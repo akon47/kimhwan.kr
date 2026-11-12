@@ -1,10 +1,6 @@
 <template>
   <div class="container container--wide status">
-    <PageHeader
-      eyebrow="Homelab"
-      title="Server Status"
-      description="집 서버에서 돌아가는 모든 서비스의 실시간 상태입니다. 트래픽·전원·배포·로그의 흐름과 호스트 자원, UPS, 백업을 한눈에 봅니다."
-    />
+    <PageHeader :eyebrow="t.status.eyebrow" :title="t.status.title" :description="t.status.description"/>
 
     <StatusBanner
       :snapshot="data"
@@ -16,17 +12,17 @@
     />
 
     <template v-if="data">
-      <StatusSection title="흐름도" note="트래픽 · 전원 · 배포 · 로그가 지금 어디로 흐르는지">
+      <StatusSection :title="sections.flow" :note="sections.flowNote">
         <div class="card flow-card">
           <FlowMap :data="data" @select="openDetail"/>
         </div>
       </StatusSection>
 
-      <StatusSection title="최근 배포" note="Docker Hub 에 새 이미지가 올라온 순서 · 실시간">
+      <StatusSection :title="sections.deploys" :note="sections.deploysNote">
         <DeployFeed/>
       </StatusSection>
 
-      <StatusSection v-if="data.host" title="Proxmox 호스트">
+      <StatusSection v-if="data.host" :title="sections.host">
         <HostSection
           :host="data.host"
           :storages="data.storages"
@@ -38,7 +34,7 @@
         />
       </StatusSection>
 
-      <StatusSection v-for="group in serviceGroups" :key="group.category" :title="group.title" :note="`${group.items.length}개`">
+      <StatusSection v-for="group in serviceGroups" :key="group.category" :title="sections[group.category]" :note="sections.count(group.items.length)">
         <div class="service-grid">
           <ServiceCard
             v-for="service in group.items"
@@ -50,13 +46,13 @@
         </div>
       </StatusSection>
 
-      <StatusSection v-if="data.guests.length" title="가상 머신 · 컨테이너" :note="`${runningGuests} / ${data.guests.length} 실행 중`">
+      <StatusSection v-if="data.guests.length" :title="sections.guests" :note="sections.running(runningGuests, data.guests.length)">
         <ul class="guest-grid">
           <GuestCard v-for="guest in data.guests" :key="guest.vmid" :guest="guest"/>
         </ul>
       </StatusSection>
 
-      <p v-if="data.errors.length" class="errors">일부 항목을 읽지 못했습니다: {{ data.errors.join(' · ') }}</p>
+      <p v-if="data.errors.length" class="errors">{{ t.status.partialErrors(data.errors.join(' · ')) }}</p>
 
       <UpsDetail v-if="detailId === UPS_DETAIL_ID && data.ups" :ups="data.ups" @close="closeDetail"/>
       <ServiceDetail
@@ -84,16 +80,18 @@ import StatusBanner from '@/components/status/StatusBanner.vue';
 import StatusSection from '@/components/status/StatusSection.vue';
 import UpsDetail from '@/components/status/UpsDetail.vue';
 import { STATUS_REFRESH_MS, useStatus } from '@/composables/useStatus';
+import { useI18n } from '@/i18n';
 import type { ServiceStatus } from '@/types/status';
 import { runningGuestCount, serviceTraffic } from '@/utils/status';
 
 /** Detail id the flow map and the UPS tile use for the UPS panel (everything else is a service id). */
 const UPS_DETAIL_ID = 'ups';
 
-const SERVICE_GROUPS: { category: ServiceStatus['category']; title: string }[] = [
-  { category: 'apps', title: '서비스' },
-  { category: 'platform', title: '인프라' },
-];
+/** The service sections, in display order. Their titles are in the texts under the same names. */
+const SERVICE_CATEGORIES: ServiceStatus['category'][] = ['apps', 'platform'];
+
+const { t } = useI18n();
+const sections = computed(() => t.value.status.sections);
 
 const { data, error, loading, lastUpdated, history, uptime, refresh } = useStatus();
 
@@ -114,9 +112,9 @@ function closeDetail() {
 const statsById = computed(() => new Map(uptime.value?.services.map((stats) => [stats.id, stats])));
 
 const serviceGroups = computed(() =>
-  SERVICE_GROUPS.map((group) => ({
-    ...group,
-    items: data.value?.services.filter((service) => service.category === group.category) ?? [],
+  SERVICE_CATEGORIES.map((category) => ({
+    category,
+    items: data.value?.services.filter((service) => service.category === category) ?? [],
   })).filter((group) => group.items.length > 0),
 );
 

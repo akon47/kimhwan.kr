@@ -12,7 +12,10 @@ export interface CheckResult {
 export interface ServiceStatus {
   readonly id: string;
   readonly name: string;
+  /** One line about the service, in Korean. */
   readonly description: string;
+  /** The same line in English (absent from older API versions). */
+  readonly descriptionEn?: string;
   readonly url?: string;
   readonly category: 'apps' | 'platform';
   readonly icon: string;

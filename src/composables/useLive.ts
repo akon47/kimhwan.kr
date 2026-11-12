@@ -10,11 +10,10 @@ interface LiveState {
   selfId: string | null;
   online: number;
   pages: Readonly<Record<string, number>>;
-  pixelCooldownMs: number;
 }
 
 // Module-level: one connection and one state for the whole app.
-const state = reactive<LiveState>({ connected: false, selfId: null, online: 0, pages: {}, pixelCooldownMs: 2000 });
+const state = reactive<LiveState>({ connected: false, selfId: null, online: 0, pages: {} });
 let currentPath = '/';
 
 /**
@@ -22,12 +21,10 @@ let currentPath = '/';
  * Call once, from the root component.
  */
 export function startLive(router: Router) {
-  const identity = tabIdentity();
-
   liveClient.onStatus((connected) => {
     state.connected = connected;
     if (connected) {
-      liveClient.send('HELLO', { ...identity, path: currentPath });
+      liveClient.send('HELLO', { ...tabIdentity(), path: currentPath });
     } else {
       state.online = 0;
       state.pages = {};
@@ -35,7 +32,6 @@ export function startLive(router: Router) {
   });
   liveClient.on('WELCOME', (welcome) => {
     state.selfId = welcome.id;
-    state.pixelCooldownMs = welcome.pixelCooldownMs;
     state.online = welcome.presence.online;
     state.pages = welcome.presence.pages;
   });

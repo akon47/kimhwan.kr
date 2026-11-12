@@ -3,15 +3,12 @@
     <section class="hero">
       <img class="hero__avatar" :src="site.avatarUrl" alt="" width="72" height="72"/>
       <h1 class="hero__title">
-        Hi, I'm <span class="hero__name">{{ site.name }}</span>
+        {{ t.home.heroBefore }}<span class="hero__name">{{ t.site.name }}</span>{{ t.home.heroAfter }}
       </h1>
-      <p class="hero__lead">
-        {{ site.role }}. {{ site.tagline }}
-        Desktop apps, web services, and the home server they run on.
-      </p>
+      <p class="hero__lead">{{ t.home.lead }}</p>
       <div class="hero__actions">
         <RouterLink to="/projects" class="btn btn--primary">
-          View projects
+          {{ t.home.viewProjects }}
           <AppIcon name="arrow-right" :size="16"/>
         </RouterLink>
         <a class="btn" :href="githubUrl" target="_blank" rel="noopener">
@@ -26,11 +23,11 @@
     <section class="section">
       <header class="section__head">
         <div>
-          <p class="eyebrow">Open source</p>
-          <h2 class="section__title">Recent projects</h2>
+          <p class="eyebrow">{{ t.home.openSource }}</p>
+          <h2 class="section__title">{{ t.home.recentProjects }}</h2>
         </div>
         <RouterLink to="/projects" class="link section__more">
-          All {{ projects.length }} projects
+          {{ t.home.allProjects(projects.length) }}
           <AppIcon name="arrow-right" :size="14"/>
         </RouterLink>
       </header>
@@ -42,24 +39,22 @@
     <section class="section">
       <header class="section__head">
         <div>
-          <p class="eyebrow">Homelab</p>
-          <h2 class="section__title">Self-hosted, end to end</h2>
-          <p class="section__lead">
-            This site and most of the projects above are served from a single machine at home.
-          </p>
+          <p class="eyebrow">{{ t.home.homelab }}</p>
+          <h2 class="section__title">{{ t.home.homelabTitle }}</h2>
+          <p class="section__lead">{{ t.home.homelabLead }}</p>
         </div>
         <RouterLink to="/status" class="link section__more">
-          See it live
+          {{ t.home.seeLive }}
           <AppIcon name="arrow-right" :size="14"/>
         </RouterLink>
       </header>
       <ul class="feature-grid">
-        <li v-for="feature in homelabFeatures" :key="feature.title" class="card feature">
+        <li v-for="feature in homelabFeatures" :key="feature.title.en" class="card feature">
           <span class="feature__icon" aria-hidden="true">
             <AppIcon :name="feature.icon"/>
           </span>
-          <h3 class="feature__title">{{ feature.title }}</h3>
-          <p class="feature__summary">{{ feature.summary }}</p>
+          <h3 class="feature__title">{{ feature.title[locale] }}</h3>
+          <p class="feature__summary">{{ feature.summary[locale] }}</p>
         </li>
       </ul>
     </section>
@@ -73,8 +68,11 @@ import AppIcon from '@/components/ui/AppIcon.vue';
 import { site } from '@/config/site';
 import { homelabFeatures } from '@/data/homelab';
 import { projects } from '@/data/projects';
+import { useI18n } from '@/i18n';
 
 const FEATURED_COUNT = 3;
+
+const { t, locale } = useI18n();
 
 const githubUrl = `https://github.com/${site.githubUser}`;
 const featuredProjects = projects.slice(0, FEATURED_COUNT);
@@ -137,7 +135,6 @@ const featuredProjects = projects.slice(0, FEATURED_COUNT);
   max-width: 36rem;
   color: var(--color-text-muted);
   font-size: var(--text-lg);
-  word-break: normal;
 }
 
 .hero__actions {
@@ -212,6 +209,5 @@ const featuredProjects = projects.slice(0, FEATURED_COUNT);
 .feature__summary {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
-  word-break: normal;
 }
 </style>

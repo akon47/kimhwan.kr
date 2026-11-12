@@ -1,5 +1,5 @@
 <template>
-  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <a class="skip-link" href="#main">{{ t.layout.skipToContent }}</a>
   <AppHeader/>
   <main id="main" class="app-main">
     <RouterView v-slot="{ Component }">
@@ -22,9 +22,12 @@ import CommandPalette from '@/components/layout/CommandPalette.vue';
 import DeployToasts from '@/components/live/DeployToasts.vue';
 import LiveCursors from '@/components/live/LiveCursors.vue';
 import { startLive } from '@/composables/useLive';
+import { useI18n } from '@/i18n';
 
 // Realtime extras (who is online, shared cursors, deploy toasts). The site works the same without them.
 startLive(useRouter());
+
+const { t } = useI18n();
 </script>
 
 <style scoped>

@@ -4,11 +4,9 @@
       <label v-for="overlay in overlays" :key="overlay.kind" class="toggle">
         <input v-model="show[overlay.kind]" type="checkbox"/>
         <i class="swatch" :class="`swatch--${overlay.kind}`"/>
-        {{ overlay.label }}
+        {{ text.overlays[overlay.kind] }}
       </label>
-      <span class="hint">
-        숫자 = 최근 {{ windowMinutes }}분 평균 요청/분 · ↑송신 ↓수신 · 움직이는 점 = 방금 들어온 요청. 마우스를 올리면 연결된 선이 위로 올라오고, 누르면 자세히 봅니다.
-      </span>
+      <span class="hint">{{ text.hint(windowMinutes) }}</span>
     </div>
 
     <svg
@@ -17,7 +15,7 @@
       class="flow-svg"
       :class="{ 'flow-svg--narrow': narrow }"
       role="img"
-      aria-label="트래픽 흐름도"
+      :aria-label="text.label"
       @mouseleave="hoverId = null"
     >
       <defs>
@@ -36,8 +34,8 @@
       </defs>
 
       <rect :x="layout.home.x" :y="layout.home.y" :width="layout.home.w" :height="layout.home.h" rx="18" class="home-box"/>
-      <text :x="layout.home.x + 20" :y="layout.home.y + 32" class="home-label">🏠 집 서버 · Proxmox · 내부망</text>
-      <text v-for="label in layout.labels" :key="label.text" :x="label.x" :y="label.y" class="col-label">{{ label.text }}</text>
+      <text :x="layout.home.x + 20" :y="layout.home.y + 32" class="home-label">{{ text.home }}</text>
+      <text v-for="label in layout.labels" :key="label.column" :x="label.x" :y="label.y" class="col-label">{{ text.columns[label.column] }}</text>
 
       <g class="edges" :class="{ dimmed: hoverId !== null }">
         <path
@@ -113,6 +111,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, useId, useTemplateRef } from 'vue';
 import { useTrafficPulse } from '@/composables/useTrafficPulse';
+import { useI18n } from '@/i18n';
 import type { StatusSnapshot } from '@/types/status';
 import { buildEdges, buildNodes, edgeTouchesNode, pulsePath, type EdgeKind, type FlowEdge, type FlowNode } from './flow/graph';
 import { NARROW_LAYOUT, WIDE_LAYOUT } from './flow/layout';
@@ -123,14 +122,17 @@ const LABEL_LINE_HEIGHT = 13;
 const props = defineProps<{ data: StatusSnapshot }>();
 const emit = defineEmits<{ select: [id: string] }>();
 
+const { t } = useI18n();
+const text = computed(() => t.value.status.flow);
+
 /* ----- overlays ----- */
 const show = reactive<Record<EdgeKind, boolean>>({ traffic: true, power: true, deploy: true, logs: true });
 
-const ALL_OVERLAYS: { kind: EdgeKind; label: string; wideOnly?: boolean }[] = [
-  { kind: 'traffic', label: '트래픽' },
-  { kind: 'power', label: '전원' },
-  { kind: 'deploy', label: '배포 (GitHub → Jenkins → Docker Hub → VM)', wideOnly: true },
-  { kind: 'logs', label: '접속 로그 → ELK', wideOnly: true },
+const ALL_OVERLAYS: { kind: EdgeKind; wideOnly?: boolean }[] = [
+  { kind: 'traffic' },
+  { kind: 'power' },
+  { kind: 'deploy', wideOnly: true },
+  { kind: 'logs', wideOnly: true },
 ];
 
 const overlays = computed(() => ALL_OVERLAYS.filter((overlay) => !overlay.wideOnly || !narrow.value));

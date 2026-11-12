@@ -4,12 +4,12 @@
       <div class="footer__meta">
         <p>© {{ site.sinceYear }}–{{ currentYear }} {{ site.nameKo }} ({{ site.name }})</p>
         <p class="footer__note">
-          Self-hosted on a home server ·
-          <a class="link" :href="site.repositoryUrl" target="_blank" rel="noopener">Source</a>
+          {{ t.layout.footerNote }} ·
+          <a class="link" :href="site.repositoryUrl" target="_blank" rel="noopener">{{ t.layout.source }}</a>
         </p>
       </div>
 
-      <img class="footer__counter" :src="site.visitCounterUrl" alt="방문자 수" loading="lazy" height="20"/>
+      <img class="footer__counter" :src="site.visitCounterUrl" :alt="t.layout.visitCounter" loading="lazy" height="20"/>
 
       <ul class="footer__socials">
         <li v-for="link in socialLinks" :key="link.href">
@@ -32,6 +32,9 @@
 <script setup lang="ts">
 import AppIcon from '@/components/ui/AppIcon.vue';
 import { site, socialLinks } from '@/config/site';
+import { useI18n } from '@/i18n';
+
+const { t } = useI18n();
 
 const currentYear = new Date().getFullYear();
 </script>

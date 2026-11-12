@@ -5,20 +5,20 @@
       <h2 class="banner__title">{{ title }}</h2>
       <p class="banner__detail">
         <template v-if="snapshot">
-          {{ snapshot.summary.up }} 정상
-          <template v-if="snapshot.summary.degraded"> · {{ snapshot.summary.degraded }} 일부 문제</template>
-          <template v-if="snapshot.summary.down"> · {{ snapshot.summary.down }} 중단</template>
-          · 집 서버 내부망에서 직접 점검
+          {{ text.countUp(snapshot.summary.up) }}
+          <template v-if="snapshot.summary.degraded"> · {{ text.countDegraded(snapshot.summary.degraded) }}</template>
+          <template v-if="snapshot.summary.down"> · {{ text.countDown(snapshot.summary.down) }}</template>
+          · {{ text.probed }}
         </template>
-        <template v-else-if="error">상태 API 에 연결할 수 없습니다 ({{ error }})</template>
-        <template v-else>불러오는 중…</template>
+        <template v-else-if="error">{{ text.apiError(error) }}</template>
+        <template v-else>{{ t.common.loading }}</template>
       </p>
     </div>
     <div class="banner__meta">
-      <span v-if="lastUpdated" class="tabular">{{ formatClock(lastUpdated) }} 기준 · {{ refreshSeconds }}초마다 갱신</span>
+      <span v-if="lastUpdated" class="tabular">{{ text.updated(formatClock(lastUpdated), refreshSeconds) }}</span>
       <button type="button" class="btn btn--sm" :disabled="loading" @click="emit('refresh')">
         <AppIcon name="refresh" :size="14"/>
-        새로고침
+        {{ t.common.refresh }}
       </button>
     </div>
   </section>
@@ -28,6 +28,7 @@
 import { computed } from 'vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import StatusDot from '@/components/ui/StatusDot.vue';
+import { useI18n } from '@/i18n';
 import type { Health, StatusSnapshot } from '@/types/status';
 import { formatClock } from '@/utils/format';
 
@@ -43,17 +44,14 @@ const emit = defineEmits<{ refresh: [] }>();
 
 const state = computed<Health | 'unknown'>(() => props.snapshot?.overall ?? (props.error ? 'down' : 'unknown'));
 
-const TITLES: Record<Health, string> = {
-  up: '모든 서비스가 정상입니다',
-  degraded: '일부 서비스에 문제가 있습니다',
-  down: '서비스가 중단됐습니다',
-};
+const { t } = useI18n();
+const text = computed(() => t.value.status.banner);
 
 const title = computed(() => {
   if (props.snapshot) {
-    return TITLES[props.snapshot.overall];
+    return text.value[props.snapshot.overall];
   }
-  return props.error ? '상태를 확인할 수 없습니다' : '상태 확인 중';
+  return props.error ? text.value.unavailable : text.value.checking;
 });
 </script>
 

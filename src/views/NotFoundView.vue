@@ -1,11 +1,17 @@
 <template>
   <div class="container not-found">
     <p class="not-found__code mono">404</p>
-    <h1 class="not-found__title">페이지를 찾을 수 없습니다</h1>
-    <p class="not-found__text">주소가 바뀌었거나 없는 페이지입니다.</p>
-    <RouterLink to="/" class="btn btn--primary">홈으로 돌아가기</RouterLink>
+    <h1 class="not-found__title">{{ t.notFound.title }}</h1>
+    <p class="not-found__text">{{ t.notFound.text }}</p>
+    <RouterLink to="/" class="btn btn--primary">{{ t.notFound.back }}</RouterLink>
   </div>
 </template>
+
+<script setup lang="ts">
+import { useI18n } from '@/i18n';
+
+const { t } = useI18n();
+</script>
 
 <style scoped>
 .not-found {

@@ -6,7 +6,7 @@
         <span class="toast__text">
           <strong>{{ toast.repo }}</strong>
           <template v-if="toast.tag"> #{{ toast.tag }}</template>
-          <span class="toast__note">방금 새 버전이 배포됐어요</span>
+          <span class="toast__note">{{ t.live.deployed }}</span>
         </span>
       </RouterLink>
     </TransitionGroup>
@@ -17,10 +17,13 @@
 import { onUnmounted, ref } from 'vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import { useLiveMessage } from '@/composables/useLive';
+import { useI18n } from '@/i18n';
 
 /** Announces a deploy to whoever is on the site when it happens, on any page. */
 const VISIBLE_MS = 8_000;
 const MAX_TOASTS = 3;
+
+const { t } = useI18n();
 
 interface Toast {
   key: number;

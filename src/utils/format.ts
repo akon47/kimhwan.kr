@@ -1,4 +1,5 @@
-/** Display formatters shared by the dashboard. All of them are pure. */
+/** Display formatters shared by the dashboard. Durations are worded in the current language. */
+import { messages } from '@/i18n';
 
 const GIB = 1024 ** 3;
 const MIB = 1024 ** 2;
@@ -20,29 +21,31 @@ export function formatGb(bytes: number): string {
   return (bytes / GIB).toFixed(bytes >= 100 * GIB ? 0 : 1);
 }
 
-/** Seconds as the two largest units, e.g. "12일 3시간", "3시간 20분", "5분". */
+/** Seconds as the two largest units, e.g. "12d 3h", "3h 20m", "5m" ("12일 3시간", … in Korean). */
 export function formatUptime(seconds: number): string {
+  const time = messages.value.time;
   const days = Math.floor(seconds / 86_400);
   const hours = Math.floor((seconds % 86_400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   if (days > 0) {
-    return `${days}일 ${hours}시간`;
+    return time.daysHours(days, hours);
   }
-  return hours > 0 ? `${hours}시간 ${minutes}분` : `${minutes}분`;
+  return hours > 0 ? time.hoursMinutes(hours, minutes) : time.minutes(minutes);
 }
 
-/** Seconds as an exact duration, e.g. "42초", "3분 5초", "2시간 10분". */
+/** Seconds as an exact duration, e.g. "42s", "3m 5s", "2h 10m" ("42초", … in Korean). */
 export function formatSeconds(seconds: number | null): string {
   if (seconds === null) {
     return EMPTY;
   }
+  const time = messages.value.time;
   if (seconds < 60) {
-    return `${seconds}초`;
+    return time.seconds(seconds);
   }
   if (seconds < 3600) {
-    return `${Math.floor(seconds / 60)}분 ${seconds % 60}초`;
+    return time.minutesSeconds(Math.floor(seconds / 60), seconds % 60);
   }
-  return `${Math.floor(seconds / 3600)}시간 ${Math.floor((seconds % 3600) / 60)}분`;
+  return time.hoursMinutes(Math.floor(seconds / 3600), Math.floor((seconds % 3600) / 60));
 }
 
 function pad2(value: number): string {

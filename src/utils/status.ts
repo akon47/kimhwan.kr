@@ -1,15 +1,15 @@
-import type { CheckResult, Health, StatusSnapshot, TrafficSummary } from '@/types/status';
+import { locale, messages } from '@/i18n';
+import type { CheckResult, Health, ServiceStatus, StatusSnapshot, TrafficSummary } from '@/types/status';
 
 export type Tone = 'success' | 'warning' | 'danger';
 
-const HEALTH_LABELS: Record<Health, string> = {
-  up: '정상',
-  degraded: '일부 문제',
-  down: '중단',
-};
-
 export function healthLabel(health: Health): string {
-  return HEALTH_LABELS[health];
+  return messages.value.status.health[health];
+}
+
+/** The service's one-line description in the current language (the API writes Korean, with English beside it). */
+export function serviceDescription(service: ServiceStatus): string {
+  return locale.value === 'en' ? (service.descriptionEn ?? service.description) : service.description;
 }
 
 /** Colour for a usage level. With `invert`, low values are the bad ones (battery charge). */
@@ -23,7 +23,8 @@ export function usageTone(percent: number, invert = false): Tone {
 
 /** One-line tooltip for a health check. */
 export function describeCheck(check: CheckResult): string {
-  const parts = [check.name, check.ok ? '정상' : '실패'];
+  const words = messages.value.status.check;
+  const parts = [check.name, check.ok ? words.ok : words.failed];
   if (check.status) {
     parts.push(`HTTP ${check.status}`);
   }

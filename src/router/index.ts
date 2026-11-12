@@ -1,10 +1,12 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
+import { watch } from 'vue';
+import { createRouter, createWebHistory, type RouteLocationNormalizedLoaded, type RouteRecordRaw } from 'vue-router';
 import { site } from '@/config/site';
+import { messages, type Messages } from '@/i18n';
 
 declare module 'vue-router' {
   interface RouteMeta {
-    /** Browser tab title; the site name is appended. */
-    title?: string;
+    /** Key of the browser tab title in the `titles` texts; the site name is appended. */
+    title?: keyof Messages['titles'];
   }
 }
 
@@ -18,25 +20,25 @@ const routes: RouteRecordRaw[] = [
     path: '/projects',
     name: 'projects',
     component: () => import('@/views/ProjectsView.vue'),
-    meta: { title: 'Projects' },
+    meta: { title: 'projects' },
   },
   {
     path: '/status',
     name: 'status',
     component: () => import('@/views/StatusView.vue'),
-    meta: { title: 'Server Status' },
+    meta: { title: 'status' },
   },
   {
     path: '/guestbook',
     name: 'guestbook',
     component: () => import('@/views/GuestbookView.vue'),
-    meta: { title: 'Guestbook' },
+    meta: { title: 'guestbook' },
   },
   {
     path: '/about',
     name: 'about',
     component: () => import('@/views/AboutView.vue'),
-    meta: { title: 'About' },
+    meta: { title: 'about' },
   },
 
   // Addresses used by earlier versions of the site.
@@ -48,7 +50,7 @@ const routes: RouteRecordRaw[] = [
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundView.vue'),
-    meta: { title: 'Page not found' },
+    meta: { title: 'notFound' },
   },
 ];
 
@@ -60,8 +62,13 @@ const router = createRouter({
   },
 });
 
-router.afterEach((to) => {
-  document.title = to.meta.title ? `${to.meta.title} · ${site.name}` : site.name;
-});
+function applyTitle(route: RouteLocationNormalizedLoaded) {
+  const key = route.meta.title;
+  document.title = key ? `${messages.value.titles[key]} · ${site.name}` : site.name;
+}
+
+router.afterEach(applyTitle);
+// The title follows the language, too.
+watch(messages, () => applyTitle(router.currentRoute.value));
 
 export default router;

@@ -4,7 +4,7 @@
     :class="`service--${service.health}`"
     role="button"
     tabindex="0"
-    :aria-label="`${service.name} 상세 보기`"
+    :aria-label="text.details(service.name)"
     @click="emit('select')"
     @keydown.enter.self="emit('select')"
     @keydown.space.self.prevent="emit('select')"
@@ -15,12 +15,12 @@
       <StatusDot :state="service.health"/>
     </header>
 
-    <p class="service__desc">{{ service.description }}</p>
+    <p class="service__desc">{{ serviceDescription(service) }}</p>
 
     <p class="service__stats tabular">
       <strong :class="`tone-${service.health}`">{{ healthLabel(service.health) }}</strong>
       <span v-if="service.latencyMs !== null">{{ service.latencyMs }} ms</span>
-      <span v-if="hasUptime" title="가동률 24시간 / 30일">
+      <span v-if="hasUptime" :title="text.uptimeTitle">
         {{ formatAvailability(stats?.uptime24hPct) }} <small>24h</small> · {{ formatAvailability(stats?.uptime30dPct) }} <small>30d</small>
       </span>
     </p>
@@ -34,10 +34,10 @@
         </li>
       </ul>
       <span class="service__links" @click.stop>
-        <a v-if="service.url" :href="service.url" target="_blank" rel="noopener" :aria-label="`${service.name} 열기`" title="열기">
+        <a v-if="service.url" :href="service.url" target="_blank" rel="noopener" :aria-label="text.open(service.name)" :title="t.common.open">
           <AppIcon name="arrow-up-right" :size="13"/>
         </a>
-        <a v-for="repo in service.repos ?? []" :key="repo" :href="repo" target="_blank" rel="noopener" :title="repo" aria-label="GitHub 저장소">
+        <a v-for="repo in service.repos ?? []" :key="repo" :href="repo" target="_blank" rel="noopener" :title="repo" :aria-label="text.repository">
           <AppIcon name="github" :size="13"/>
         </a>
       </span>
@@ -50,9 +50,10 @@ import { computed } from 'vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import SparkLine from '@/components/ui/SparkLine.vue';
 import StatusDot from '@/components/ui/StatusDot.vue';
+import { useI18n } from '@/i18n';
 import type { ServiceStats, ServiceStatus } from '@/types/status';
 import { formatAvailability } from '@/utils/format';
-import { describeCheck, healthLabel } from '@/utils/status';
+import { describeCheck, healthLabel, serviceDescription } from '@/utils/status';
 
 const props = defineProps<{
   service: ServiceStatus;
@@ -61,6 +62,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{ select: [] }>();
+
+const { t } = useI18n();
+const text = computed(() => t.value.status.service);
 
 const hasUptime = computed(() => typeof props.stats?.uptime24hPct === 'number');
 const latencySeries = computed(() => props.stats?.latency24h ?? []);

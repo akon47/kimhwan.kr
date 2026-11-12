@@ -16,6 +16,29 @@
       document.documentElement.dataset.theme = theme;
     })();
   </script>
+  <!-- Language: the visitor's saved choice, otherwise Korean for visitors from Korea and English for the rest.
+       Keep in sync with src/i18n/index.ts. -->
+  <script>
+    (function () {
+      var locale;
+      try {
+        var saved = localStorage.getItem('locale');
+        if (saved === 'ko' || saved === 'en') locale = saved;
+      } catch (e) { /* storage blocked: fall through to detection */ }
+      if (!locale) {
+        var korean = false;
+        try {
+          var languages = navigator.languages || [navigator.language];
+          for (var i = 0; i < languages.length; i++) {
+            if (/^ko\b/i.test(languages[i] || '')) korean = true;
+          }
+          if (Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Seoul') korean = true;
+        } catch (e) { /* very old browser: English */ }
+        locale = korean ? 'ko' : 'en';
+      }
+      document.documentElement.lang = locale;
+    })();
+  </script>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-6GRLMFLWYT"></script>
   <script>

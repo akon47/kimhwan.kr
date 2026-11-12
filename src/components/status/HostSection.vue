@@ -2,10 +2,10 @@
   <div class="host">
     <div class="tiles">
       <StatTile label="CPU" :value="host.cpuPct.toFixed(1)" unit="%" :meter="host.cpuPct" :series="cpuSeries">
-        {{ host.cpuCount }} threads · load {{ host.load1.toFixed(2) }}<template v-if="hasCpuTrend"> · 24h</template>
+        {{ text.cpuNote(host.cpuCount, host.load1.toFixed(2)) }}<template v-if="hasCpuTrend"> · 24h</template>
       </StatTile>
 
-      <StatTile label="메모리" :value="memoryPct" unit="%" :meter="memoryPct" :series="memSeries">
+      <StatTile :label="text.memory" :value="memoryPct" unit="%" :meter="memoryPct" :series="memSeries">
         {{ formatGb(host.mem.used) }} / {{ formatGb(host.mem.total) }} GB
         <template v-if="host.swap.used > 0"> · swap {{ formatGb(host.swap.used) }} GB</template>
       </StatTile>
@@ -13,7 +13,7 @@
       <StatTile
         v-for="storage in mainStorages"
         :key="storage.name"
-        :label="STORAGE_LABELS[storage.name] ?? storage.name"
+        :label="storageLabel(storage.name)"
         :value="percentOf(storage.used, storage.total)"
         unit="%"
         :meter="percentOf(storage.used, storage.total)"
@@ -21,7 +21,7 @@
         {{ formatGb(storage.used) }} / {{ formatGb(storage.total) }} GB
       </StatTile>
 
-      <StatTile label="가동" :value="formatUptime(host.uptimeSec)">{{ pveVersion }} · {{ host.kernel }}</StatTile>
+      <StatTile :label="text.uptime" :value="formatUptime(host.uptimeSec)">{{ pveVersion }} · {{ host.kernel }}</StatTile>
 
       <StatTile
         v-if="ups"
@@ -32,22 +32,22 @@
         meter-invert
         :warn="ups.onBattery"
         interactive
-        title="누르면 UPS 상세"
+        :title="text.upsTitle"
         @click="emit('openUps')"
       >
-        {{ ups.onBattery ? '⚡ 배터리 사용 중' : '전원 정상' }} · 부하 {{ formatNumber(ups.loadPct) }}% · {{ formatNumber(ups.runtimeMin) }}분 버팀
+        {{ ups.onBattery ? text.onBattery : text.powerOk }} · {{ text.upsNote(formatNumber(ups.loadPct), formatNumber(ups.runtimeMin)) }}
       </StatTile>
 
-      <StatTile v-if="backup" label="💾 마지막 백업" :value="backup.status === 'OK' ? '성공' : backup.status" :warn="backup.status !== 'OK'">
+      <StatTile v-if="backup" :label="text.lastBackup" :value="backup.status === 'OK' ? text.backupOk : backup.status" :warn="backup.status !== 'OK'">
         {{ formatShortDate(backup.startedAt) }}
-        <template v-if="backup.durationSec !== null"> · {{ Math.round(backup.durationSec / 60) }}분 소요</template>
+        <template v-if="backup.durationSec !== null"> · {{ text.backupTook(Math.round(backup.durationSec / 60)) }}</template>
       </StatTile>
     </div>
 
     <ul v-if="disks.length" class="disks">
       <li v-for="disk in disks" :key="disk.device" class="disk" :class="{ 'disk--bad': !isHealthy(disk) }">
         {{ isSolidState(disk) ? '⚡' : '💿' }} {{ disk.model }} · {{ (disk.sizeBytes / 1e12).toFixed(1) }} TB · {{ disk.health }}
-        <template v-if="disk.wearPct !== null"> · 수명 {{ disk.wearPct }}% 사용</template>
+        <template v-if="disk.wearPct !== null"> · {{ text.diskWear(disk.wearPct) }}</template>
         <template v-if="disk.tempC !== null"> · {{ disk.tempC }}℃</template>
       </li>
     </ul>
@@ -57,14 +57,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import StatTile from '@/components/status/StatTile.vue';
+import { useI18n } from '@/i18n';
 import type { BackupStatus, DiskStatus, HistoryResponse, HostStatus, StorageStatus, UpsStatus } from '@/types/status';
 import { formatGb, formatNumber, formatShortDate, formatUptime, percentOf } from '@/utils/format';
 
-/** Storages worth a tile; the rest (ISO store, empty pools) are noise here. */
-const STORAGE_LABELS: Record<string, string> = {
-  'local-lvm': 'VM 디스크 (SSD)',
-  'local-hdd': '백업·데이터 (HDD)',
-};
+/** Storages worth a tile; the rest (ISO store, empty pools) are noise here. Their labels are in the texts. */
+const MAIN_STORAGES = ['local-lvm', 'local-hdd'] as const;
 
 const props = defineProps<{
   host: HostStatus;
@@ -77,8 +75,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{ openUps: [] }>();
 
+const { t } = useI18n();
+const text = computed(() => t.value.status.host);
+
+function storageLabel(name: string): string {
+  return (text.value.storages as Record<string, string>)[name] ?? name;
+}
+
 const memoryPct = computed(() => percentOf(props.host.mem.used, props.host.mem.total));
-const mainStorages = computed(() => props.storages.filter((storage) => storage.name in STORAGE_LABELS));
+const mainStorages = computed(() => props.storages.filter((storage) => (MAIN_STORAGES as readonly string[]).includes(storage.name)));
 
 const cpuSeries = computed(() => props.history?.points.map((point) => point.cpuPct) ?? []);
 const memSeries = computed(() => props.history?.points.map((point) => point.memPct) ?? []);

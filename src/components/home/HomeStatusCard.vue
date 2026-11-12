@@ -4,7 +4,7 @@
       <StatusDot :state="state"/>
       <span class="status-card__title">{{ title }}</span>
       <span class="status-card__more">
-        Live dashboard
+        {{ t.home.status.dashboard }}
         <AppIcon name="arrow-right" :size="14"/>
       </span>
     </div>
@@ -24,12 +24,15 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import StatusDot from '@/components/ui/StatusDot.vue';
+import { useI18n } from '@/i18n';
 import { fetchStatus } from '@/services/statusApi';
 import type { Health, StatusSnapshot } from '@/types/status';
 import { EMPTY, formatNumber, percentOf } from '@/utils/format';
 import { runningGuestCount } from '@/utils/status';
 
 /** A one-shot summary of the home server for the landing page. The full view is /status. */
+const { t } = useI18n();
+
 const snapshot = shallowRef<StatusSnapshot | null>(null);
 const failed = ref(false);
 const controller = new AbortController();
@@ -46,28 +49,24 @@ onUnmounted(() => controller.abort());
 
 const state = computed<Health | 'unknown'>(() => snapshot.value?.overall ?? (failed.value ? 'down' : 'unknown'));
 
-const TITLES: Record<Health, string> = {
-  up: 'All systems operational',
-  degraded: 'Some services are degraded',
-  down: 'Service outage',
-};
-
 const title = computed(() => {
+  const text = t.value.home.status;
   if (snapshot.value) {
-    return TITLES[snapshot.value.overall];
+    return text[snapshot.value.overall];
   }
-  return failed.value ? 'Status is unavailable right now' : 'Checking the home server…';
+  return failed.value ? text.unavailable : text.checking;
 });
 
 const stats = computed<{ label: string; value: string; unit?: string }[]>(() => {
   const s = snapshot.value;
   const host = s?.host;
+  const text = t.value.home.status;
   return [
-    { label: 'Services up', value: s ? `${s.summary.up}` : EMPTY, unit: s ? ` / ${s.services.length}` : undefined },
-    { label: 'VMs & containers', value: s ? `${runningGuestCount(s)}` : EMPTY },
+    { label: text.servicesUp, value: s ? `${s.summary.up}` : EMPTY, unit: s ? ` / ${s.services.length}` : undefined },
+    { label: text.guests, value: s ? `${runningGuestCount(s)}` : EMPTY },
     { label: 'CPU', value: formatNumber(host?.cpuPct), unit: host ? '%' : undefined },
-    { label: 'Memory', value: host ? `${percentOf(host.mem.used, host.mem.total)}` : EMPTY, unit: host ? '%' : undefined },
-    { label: 'UPS battery', value: formatNumber(s?.ups?.chargePct), unit: s?.ups ? '%' : undefined },
+    { label: text.memory, value: host ? `${percentOf(host.mem.used, host.mem.total)}` : EMPTY, unit: host ? '%' : undefined },
+    { label: text.battery, value: formatNumber(s?.ups?.chargePct), unit: s?.ups ? '%' : undefined },
   ];
 });
 </script>

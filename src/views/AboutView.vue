@@ -3,12 +3,12 @@
     <section class="profile">
       <img class="profile__avatar" :src="site.avatarUrl" :alt="site.name" width="112" height="112"/>
       <div class="profile__text">
-        <p class="eyebrow">About</p>
+        <p class="eyebrow">{{ t.about.eyebrow }}</p>
         <h1 class="profile__name">
           {{ site.name }} <span class="profile__name-ko">{{ site.nameKo }}</span>
         </h1>
-        <p class="profile__role">{{ site.role }}</p>
-        <p class="profile__bio">{{ site.tagline }}</p>
+        <p class="profile__role">{{ t.site.role }}</p>
+        <p class="profile__bio">{{ t.site.tagline }}</p>
         <ul class="profile__links">
           <li v-for="link in socialLinks" :key="link.href">
             <a class="btn btn--sm" :href="link.href" target="_blank" rel="noopener">
@@ -21,8 +21,8 @@
     </section>
 
     <section class="block">
-      <h2 class="block__title">What I build with</h2>
-      <p class="block__note">Collected from the projects on this site; the number is how many of them use it.</p>
+      <h2 class="block__title">{{ t.about.stackTitle }}</h2>
+      <p class="block__note">{{ t.about.stackNote }}</p>
       <ul class="stack">
         <li v-for="item in stack" :key="item.tag" class="tag stack__item">
           {{ item.tag }}
@@ -34,7 +34,7 @@
     <section v-if="!statsFailed" class="block">
       <h2 class="block__title">GitHub</h2>
       <a :href="githubUrl" target="_blank" rel="noopener" class="stats">
-        <img :src="githubStatsSrc" alt="GitHub 활동 통계" loading="lazy" @error="statsFailed = true"/>
+        <img :src="githubStatsSrc" :alt="t.about.githubStats" loading="lazy" @error="statsFailed = true"/>
       </a>
     </section>
   </div>
@@ -46,8 +46,10 @@ import AppIcon from '@/components/ui/AppIcon.vue';
 import { useTheme } from '@/composables/useTheme';
 import { site, socialLinks } from '@/config/site';
 import { tagUsage } from '@/data/projects';
+import { useI18n } from '@/i18n';
 
 const { isDark } = useTheme();
+const { t } = useI18n();
 
 const githubUrl = `https://github.com/${site.githubUser}`;
 

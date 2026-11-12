@@ -1,10 +1,12 @@
 /**
- * Turns a status snapshot into the nodes and edges of the flow map. Pure functions: no Vue, no DOM.
+ * Turns a status snapshot into the nodes and edges of the flow map. No DOM here; labels and tooltips are
+ * worded in the current language.
  * Geometry comes from layout.ts; FlowMap.vue only renders the result.
  */
+import { messages } from '@/i18n';
 import type { Health, ServiceStatus, StatusSnapshot } from '@/types/status';
 import { formatBps, formatRate } from '@/utils/format';
-import { healthLabel, runningGuestCount, serviceTraffic, type TrafficRate } from '@/utils/status';
+import { healthLabel, runningGuestCount, serviceDescription, serviceTraffic, type TrafficRate } from '@/utils/status';
 import { APP_ORDER, DIRECT_SERVICES, NODE_HEIGHT, PLATFORM_ORDER, type Column, type FlowLayout } from './layout';
 
 export type NodeHealth = Health | 'none';
@@ -115,6 +117,7 @@ function durationFor(rpm: number): string {
 
 export function buildNodes(data: StatusSnapshot, layout: FlowLayout, { narrow, showDeploy }: BuildOptions): FlowNode[] {
   const nodes: FlowNode[] = [];
+  const text = messages.value.status.flow;
   const traffic = data.traffic;
   const service = (id: string): ServiceStatus | undefined => data.services.find((s) => s.id === id);
 
@@ -129,7 +132,7 @@ export function buildNodes(data: StatusSnapshot, layout: FlowLayout, { narrow, s
     byVhost && traffic ? Object.values(byVhost).reduce((a, b) => a + b, 0) / (traffic.windowMinutes * 60) : 0;
 
   place('visitor', {
-    label: '방문자',
+    label: text.visitor,
     icon: '🌍',
     sub: traffic
       ? trafficLabel({
@@ -139,15 +142,15 @@ export function buildNodes(data: StatusSnapshot, layout: FlowLayout, { narrow, s
         })
       : undefined,
     health: 'none',
-    title: '인터넷에서 오는 요청 전체',
+    title: text.visitorTitle,
   });
   place('cloudflare', {
     label: 'Cloudflare',
     icon: '☁️',
-    sub: '프록시 · 점검 페이지 · Access',
+    sub: text.cloudflareSub,
     health: 'none',
     url: 'https://www.cloudflare.com/',
-    title: 'DNS·프록시 · 정전 시 점검 페이지(Worker) · Kibana 앞 Access',
+    title: text.cloudflareTitle,
   });
   if (showDeploy && !narrow) {
     place('github', {
@@ -156,60 +159,60 @@ export function buildNodes(data: StatusSnapshot, layout: FlowLayout, { narrow, s
       sub: 'push → webhook',
       health: 'none',
       url: 'https://github.com/akon47',
-      title: '소스 저장소',
+      title: text.githubTitle,
     });
     place('dockerhub', {
       label: 'Docker Hub',
       icon: '🐳',
-      sub: 'akon47/* 이미지',
+      sub: text.dockerhubSub,
       health: 'none',
       url: 'https://hub.docker.com/u/akon47',
-      title: '빌드된 이미지 저장소',
+      title: text.dockerhubTitle,
     });
   }
 
   const ups = data.ups;
   place('power', {
-    label: '전원',
+    label: text.power,
     icon: '🔌',
     sub: ups?.lineVolts ? `${ups.lineVolts.toFixed(0)} V` : undefined,
     health: ups ? (ups.onBattery ? 'down' : 'up') : 'none',
     select: ups ? 'ups' : undefined,
-    title: '상용 전원 (UPS 가 재는 입력 전압)',
+    title: text.powerTitle,
   });
   place('ups', {
     label: 'UPS',
     icon: '🔋',
     sub: ups
-      ? `${ups.chargePct?.toFixed(0) ?? '–'}% · ${ups.runtimeMin?.toFixed(0) ?? '–'}분 · 부하 ${ups.loadPct?.toFixed(0) ?? '–'}%`
-      : '연결 안 됨',
+      ? text.upsSub(ups.chargePct?.toFixed(0) ?? '–', ups.runtimeMin?.toFixed(0) ?? '–', ups.loadPct?.toFixed(0) ?? '–')
+      : text.upsMissing,
     health: ups ? (ups.onBattery ? 'degraded' : 'up') : 'none',
     select: ups ? 'ups' : undefined,
-    title: ups ? `${ups.model} · ${ups.status} · 누르면 상세` : 'UPS 상태를 읽지 못함',
+    title: ups ? text.upsTitle(ups.model, ups.status) : text.upsUnread,
   });
 
   const host = data.host;
   const gib = 1024 ** 3;
   place('host', {
-    label: 'Proxmox 호스트',
+    label: text.host,
     icon: '🧱',
     sub: host
-      ? `CPU ${host.cpuPct.toFixed(0)}% · RAM ${(host.mem.used / gib).toFixed(0)} / ${(host.mem.total / gib).toFixed(0)} GB · ${runningGuestCount(data)}개 실행`
+      ? text.hostSub(host.cpuPct.toFixed(0), (host.mem.used / gib).toFixed(0), (host.mem.total / gib).toFixed(0), runningGuestCount(data))
       : undefined,
     health: host ? 'up' : 'none',
     url: 'https://ve.kimhwan.kr/',
     select: service('proxmox') ? 'proxmox' : undefined,
-    title: host ? `${host.pveVersion} · 가동 ${Math.floor(host.uptimeSec / 86_400)}일` : '',
+    title: host ? text.hostTitle(host.pveVersion, Math.floor(host.uptimeSec / 86_400)) : '',
   });
 
   const gateway = service('gateway');
   place('gateway', {
-    label: 'nginx 관문',
+    label: text.gateway,
     icon: '🚪',
-    sub: typeof gateway?.latencyMs === 'number' ? `TLS 종료 · ${gateway.latencyMs} ms` : 'TLS 종료',
+    sub: typeof gateway?.latencyMs === 'number' ? `${text.gatewaySub} · ${gateway.latencyMs} ms` : text.gatewaySub,
     health: gateway?.health ?? 'none',
     select: gateway ? 'gateway' : undefined,
-    title: '모든 공개 도메인이 지나는 관문 (LXC 101)',
+    title: text.gatewayTitle,
   });
 
   const placeColumn = (ids: readonly string[], column: Column) => {
@@ -220,7 +223,7 @@ export function buildNodes(data: StatusSnapshot, layout: FlowLayout, { narrow, s
         id: s.id,
         label: s.name,
         icon: s.icon,
-        sub: trafficLabel(rate) ?? (s.latencyMs !== null ? `${s.latencyMs} ms · 대기 중` : undefined),
+        sub: trafficLabel(rate) ?? (s.latencyMs !== null ? text.idle(s.latencyMs) : undefined),
         x: column.x,
         y: column.top + index * column.step,
         w: column.w,
@@ -228,7 +231,7 @@ export function buildNodes(data: StatusSnapshot, layout: FlowLayout, { narrow, s
         health: s.health,
         url: s.url,
         select: s.id,
-        title: `${s.description} · ${healthLabel(s.health)}`,
+        title: `${serviceDescription(s)} · ${healthLabel(s.health)}`,
       });
     });
   };
@@ -242,6 +245,7 @@ export function buildNodes(data: StatusSnapshot, layout: FlowLayout, { narrow, s
 
 export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], layout: FlowLayout, narrow: boolean): FlowEdge[] {
   const edges: FlowEdge[] = [];
+  const text = messages.value.status.flow;
   const node = (id: string) => nodes.find((n) => n.id === id);
   const service = (id: string) => data.services.find((s) => s.id === id);
   const isUp = (id: string) => service(id)?.health === 'up';
@@ -293,7 +297,7 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
       dead,
       width: widthFor(r.rpm),
       duration: durationFor(r.rpm),
-      title: `${s.name}: ${trafficLabel(r) ?? '최근 요청 없음'}`,
+      title: `${s.name}: ${trafficLabel(r) ?? text.noRequests}`,
     });
   };
 
@@ -310,7 +314,7 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
       d: `M ${visitorCx} ${visitor.y + visitor.h} L ${visitorCx} ${cloudflare.y}`,
       active: proxied.rpm > 0,
       dead: false,
-      title: `Cloudflare 경유 ${formatRate(proxied.rpm)}`,
+      title: text.viaCloudflare(formatRate(proxied.rpm)),
       label: trafficLines(proxied),
       lx: visitorCx + 10,
       ly: gapMid - 4,
@@ -322,7 +326,7 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
       d: curveLeftToRight(cloudflare, gateway),
       active: proxied.rpm > 0 && gatewayUp,
       dead: !gatewayUp,
-      title: `Cloudflare → 관문 ${formatRate(proxied.rpm)}`,
+      title: text.cloudflareToGateway(formatRate(proxied.rpm)),
       label: trafficLines(proxied),
       lx: (cloudflare.x + cloudflare.w + gateway.x) / 2,
       ly: midY - 22,
@@ -337,18 +341,18 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
       d: `M ${vx} ${vy} C ${vx + 60} ${vy}, ${gx} ${vy + 20}, ${gx} ${gateway.y}`,
       active: direct.rpm > 0 && gatewayUp,
       dead: !gatewayUp,
-      title: `직결 (Cloudflare 를 거치지 않는 NAS·Proxmox·메일·VPN) ${formatRate(direct.rpm)}`,
-      label: trafficLines(direct, '직결 '),
+      title: text.direct(formatRate(direct.rpm)),
+      label: trafficLines(direct, text.directPrefix),
       lx: (vx + gx) / 2,
       ly: vy - 27,
       anchor: 'middle',
     });
     if (lastApp && lastPlatform) {
       const { trunk1, trunk2, busY } = layout;
-      trunk('gw-trunk', `M ${gateway.x + gateway.w} ${midY} L ${trunk1} ${midY}`, totalRpm, 1, `관문 → 내부 서비스 ${formatRate(totalRpm)}`);
-      trunk('trunk1', `M ${trunk1} ${busY} L ${trunk1} ${lastApp.y + lastApp.h / 2}`, totalRpm, 1, '서비스 간선');
-      trunk('bus', `M ${trunk1} ${busY} L ${trunk2} ${busY}`, platformRpm, 0.5, '인프라 간선');
-      trunk('trunk2', `M ${trunk2} ${busY} L ${trunk2} ${lastPlatform.y + lastPlatform.h / 2}`, platformRpm, 0.5, '인프라 간선');
+      trunk('gw-trunk', `M ${gateway.x + gateway.w} ${midY} L ${trunk1} ${midY}`, totalRpm, 1, text.gatewayToServices(formatRate(totalRpm)));
+      trunk('trunk1', `M ${trunk1} ${busY} L ${trunk1} ${lastApp.y + lastApp.h / 2}`, totalRpm, 1, text.appsTrunk);
+      trunk('bus', `M ${trunk1} ${busY} L ${trunk2} ${busY}`, platformRpm, 0.5, text.platformTrunk);
+      trunk('trunk2', `M ${trunk2} ${busY} L ${trunk2} ${lastPlatform.y + lastPlatform.h / 2}`, platformRpm, 0.5, text.platformTrunk);
     }
     apps.forEach((n) => branch(n, layout.trunk1));
     platform.forEach((n) => branch(n, layout.trunk2));
@@ -361,7 +365,7 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
       d: lineTopToBottom(visitor, cloudflare),
       active: proxied.rpm > 0,
       dead: false,
-      title: `Cloudflare 경유 ${formatRate(proxied.rpm)}`,
+      title: text.viaCloudflare(formatRate(proxied.rpm)),
       label: trafficLines(proxied),
       lx: cx + 10,
       ly: labelY,
@@ -376,7 +380,7 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
       d: `M ${rx} ${cy} C ${rx + 50} ${cy}, ${rx + 50} ${gy}, ${rx} ${gy}`,
       active: proxied.rpm > 0 && gatewayUp,
       dead: !gatewayUp,
-      title: `Cloudflare → 관문 ${formatRate(proxied.rpm)}`,
+      title: text.cloudflareToGateway(formatRate(proxied.rpm)),
     });
     const lx0 = visitor.x;
     const vy = visitor.y + visitor.h / 2;
@@ -386,8 +390,8 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
       d: `M ${lx0} ${vy} C ${lx0 - 40} ${vy}, ${lx0 - 40} ${gy}, ${lx0} ${gy}`,
       active: direct.rpm > 0 && gatewayUp,
       dead: !gatewayUp,
-      title: `직결 (NAS·Proxmox·메일·VPN) ${formatRate(direct.rpm)}`,
-      label: direct.rpm > 0 ? `직결 ${formatRate(direct.rpm)}` : undefined,
+      title: text.direct(formatRate(direct.rpm)),
+      label: direct.rpm > 0 ? `${text.directPrefix}${formatRate(direct.rpm)}` : undefined,
       lx: visitor.x,
       ly: labelY,
       anchor: 'start',
@@ -397,8 +401,8 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
       const gx = gateway.x + 60;
       const ty = gateway.y + gateway.h + 24;
       const { trunk1 } = layout;
-      trunk('gw-trunk', `M ${gx} ${gateway.y + gateway.h} L ${gx} ${ty} L ${trunk1} ${ty}`, totalRpm, 1, `관문 → 내부 서비스 ${formatRate(totalRpm)}`);
-      trunk('trunk1', `M ${trunk1} ${ty} L ${trunk1} ${last.y + last.h / 2}`, totalRpm, 1, '간선');
+      trunk('gw-trunk', `M ${gx} ${gateway.y + gateway.h} L ${gx} ${ty} L ${trunk1} ${ty}`, totalRpm, 1, text.gatewayToServices(formatRate(totalRpm)));
+      trunk('trunk1', `M ${trunk1} ${ty} L ${trunk1} ${last.y + last.h / 2}`, totalRpm, 1, text.trunk);
     }
     [...apps, ...platform].forEach((n) => branch(n, layout.trunk1));
   }
@@ -418,7 +422,7 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
       dead: onBattery,
       width: 2.6,
       duration: '1.2s',
-      title: onBattery ? '정전: 상용 전원 끊김' : '상용 전원 정상',
+      title: onBattery ? text.outage : text.mainsOk,
     });
     const loadLabel = data.ups?.nominalPowerW ? `${data.ups.loadPct?.toFixed(0) ?? '–'}% of ${data.ups.nominalPowerW} W` : undefined;
     const upsToHost = { id: 'ups-host', kind: 'power', active: hasUps, dead: false, width: 2.6, duration: onBattery ? '0.5s' : '1.2s', label: loadLabel } as const;
@@ -426,7 +430,7 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
       edges.push({
         ...upsToHost,
         d: curveLeftToRight(ups, host),
-        title: onBattery ? '배터리로 호스트에 전원 공급 중' : 'UPS 경유 전원 공급',
+        title: onBattery ? text.onBattery : text.throughUps,
         lx: (ups.x + ups.w + host.x) / 2,
         ly: ups.y + ups.h / 2 - 9,
         anchor: 'middle',
@@ -436,7 +440,7 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
       edges.push({
         ...upsToHost,
         d: `M ${ux} ${ups.y + ups.h} L ${ux} ${host.y}`,
-        title: 'UPS 경유 전원 공급',
+        title: text.throughUps,
         lx: ux + 8,
         ly: ups.y + ups.h + 16,
         anchor: 'start',
@@ -461,14 +465,14 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
         id: 'gh-j',
         d: `M ${ghRight} ${github.y + github.h / 2 - 10} C ${ghRight + 160} ${github.y - 110}, ${jenkins.x - 40} ${jenkins.y + jenkins.h / 2 + 120}, ${jenkins.x + 30} ${jenkinsBottom}`,
         dead: !jenkinsUp,
-        title: 'GitHub push → Jenkins 웹훅',
+        title: text.webhook,
       });
       edges.push({
         ...deploy,
         id: 'j-dh',
         d: `M ${jenkinsCx} ${jenkinsBottom} C ${jenkinsCx} 560, ${dhRight + 120} ${dockerhub.y - 80}, ${dhRight} ${dockerhub.y + dockerhub.h / 2 - 10}`,
         dead: !jenkinsUp,
-        title: 'Jenkins → Docker Hub 이미지 푸시',
+        title: text.imagePush,
       });
       if (lastApp) {
         const appsCx = layout.apps.x + layout.apps.w / 2;
@@ -478,7 +482,7 @@ export function buildEdges(data: StatusSnapshot, nodes: readonly FlowNode[], lay
           id: 'dh-apps',
           d: `M ${dhRight} ${dockerhub.y + dockerhub.h / 2 + 10} C ${dhRight + 110} ${dockerhub.y + 60}, ${layout.apps.x - 90} ${appsBottom + 60}, ${appsCx} ${appsBottom}`,
           dead: false,
-          title: 'VM 이 Docker Hub 에서 이미지를 받아 compose 로 배포',
+          title: text.rollout,
         });
       }
     }

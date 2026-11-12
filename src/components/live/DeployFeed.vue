@@ -4,12 +4,12 @@
       <span class="feed__icon" aria-hidden="true"><AppIcon name="package" :size="14"/></span>
       <a class="feed__repo" :href="registryUrl(deploy)" target="_blank" rel="noopener">{{ deploy.repo }}</a>
       <span v-if="deploy.tag" class="feed__tag mono">#{{ deploy.tag }}</span>
-      <time class="feed__time" :datetime="deploy.at" :title="new Date(deploy.at).toLocaleString()">
+      <time class="feed__time" :datetime="deploy.at" :title="new Date(deploy.at).toLocaleString(locale)">
         {{ formatRelativeTime(deploy.at, now) }}
       </time>
     </li>
   </ol>
-  <p v-else class="feed__empty">{{ failed ? '배포 기록을 불러오지 못했습니다.' : '불러오는 중…' }}</p>
+  <p v-else class="feed__empty">{{ failed ? t.live.deploysFailed : t.common.loading }}</p>
 </template>
 
 <script setup lang="ts">
@@ -17,6 +17,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import AppIcon from '@/components/ui/AppIcon.vue';
 import { useLiveMessage } from '@/composables/useLive';
 import { site } from '@/config/site';
+import { useI18n } from '@/i18n';
 import { fetchDeploys } from '@/services/liveClient';
 import type { DeployEvent } from '@/types/live';
 import { formatRelativeTime } from '@/utils/time';
@@ -28,6 +29,8 @@ import { formatRelativeTime } from '@/utils/time';
 const props = withDefaults(defineProps<{ limit?: number }>(), { limit: 8 });
 
 const FRESH_MS = 10 * 60_000;
+
+const { t, locale } = useI18n();
 
 const deploys = ref<DeployEvent[]>([]);
 const failed = ref(false);

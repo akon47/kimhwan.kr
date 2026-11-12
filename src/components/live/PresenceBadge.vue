@@ -4,34 +4,42 @@
       v-if="live.connected && live.online > 0"
       to="/guestbook"
       class="presence tabular"
-      :title="`지금 ${live.online}명이 보고 있어요`"
-      :aria-label="`지금 ${live.online}명 접속 중, 방명록으로 이동`"
+      :title="t.live.presenceTitle(live.online)"
+      :aria-label="t.live.presenceLabel(live.online)"
     >
       <span class="presence__dot" aria-hidden="true"/>
-      {{ live.online }}
+      <span class="presence__count">{{ live.online }}</span>
     </RouterLink>
   </Transition>
 </template>
 
 <script setup lang="ts">
 import { useLive } from '@/composables/useLive';
+import { useI18n } from '@/i18n';
 
 /** How many tabs are on the site right now. Hidden while the realtime backend is unreachable. */
 const { live } = useLive();
+const { t } = useI18n();
 </script>
 
 <style scoped>
+/*
+ * The dot and the digits have to share one centre line. Every size here is a whole, even number of pixels
+ * (26px inside the border, 8px dot, 12px line), so neither of them lands on a half pixel and gets rounded
+ * a different way than the other.
+ */
 .presence {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  height: 1.75rem;
-  padding-inline: var(--space-3);
+  gap: 6px;
+  height: 28px;
+  padding-inline: 10px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   color: var(--color-text-muted);
-  font-size: var(--text-xs);
+  font-size: 12px;
   font-weight: var(--weight-semibold);
+  line-height: 1;
   transition: border-color var(--duration-fast);
 }
 
@@ -40,11 +48,18 @@ const { live } = useLive();
 }
 
 .presence__dot {
-  width: 7px;
-  height: 7px;
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--color-success);
   animation: breathe 2.4s ease-in-out infinite;
+}
+
+/* Digits have no descenders: centre their own height (baseline to cap height), not the whole line box. */
+.presence__count {
+  display: block;
+  text-box: trim-both cap alphabetic;
 }
 
 @keyframes breathe {

@@ -1,12 +1,8 @@
 <template>
   <div class="container">
-    <PageHeader
-      eyebrow="Open source"
-      title="Projects"
-      description="Things I built in my own time and published on GitHub: Windows desktop apps, web services and a library."
-    />
+    <PageHeader :eyebrow="t.projects.eyebrow" :title="t.projects.title" :description="t.projects.description"/>
 
-    <div class="filters" role="group" aria-label="프로젝트 종류">
+    <div class="filters" role="group" :aria-label="t.projects.filterLabel">
       <button
         v-for="option in filterOptions"
         :key="option.value"
@@ -31,17 +27,20 @@
 import { computed, ref } from 'vue';
 import PageHeader from '@/components/layout/PageHeader.vue';
 import ProjectCard from '@/components/projects/ProjectCard.vue';
-import { projectKindLabels, projects, type ProjectKind } from '@/data/projects';
+import { projectKinds, projects, type ProjectKind } from '@/data/projects';
+import { useI18n } from '@/i18n';
 
 type Filter = ProjectKind | 'all';
+
+const { t } = useI18n();
 
 const filter = ref<Filter>('all');
 
 const filterOptions = computed<{ value: Filter; label: string; count: number }[]>(() => [
-  { value: 'all', label: 'All', count: projects.length },
-  ...(Object.keys(projectKindLabels) as ProjectKind[]).map((kind) => ({
+  { value: 'all', label: t.value.projects.all, count: projects.length },
+  ...projectKinds.map((kind) => ({
     value: kind,
-    label: projectKindLabels[kind],
+    label: t.value.projects.kinds[kind],
     count: projects.filter((project) => project.kind === kind).length,
   })),
 ]);

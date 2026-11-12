@@ -4,10 +4,10 @@ export const NODE_HEIGHT = 54;
 
 /** Services drawn in the two columns, top to bottom. Ones the API does not report are skipped. */
 export const APP_ORDER = ['homepage', 'hwanstory', 'hwanscord', 'shootgame', 'screenshare', 'funcia', 'visit-counter', 'n8n'];
-export const PLATFORM_ORDER = ['jenkins', 'elk', 'mail', 'nas', 'vpn', 'proxmox'];
+export const PLATFORM_ORDER = ['jenkins', 'elk', 'nas', 'vpn', 'proxmox'];
 
 /** Services reached without Cloudflare in front. */
-export const DIRECT_SERVICES: ReadonlySet<string> = new Set(['nas', 'proxmox', 'mail', 'vpn']);
+export const DIRECT_SERVICES: ReadonlySet<string> = new Set(['nas', 'proxmox', 'vpn']);
 
 export interface Column {
   readonly x: number;
@@ -21,7 +21,8 @@ export interface FlowLayout {
   readonly h: number;
   /** Dashed box around everything inside the home network. */
   readonly home: { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
-  readonly labels: readonly { readonly text: string; readonly x: number; readonly y: number }[];
+  /** Headings of the two service columns. */
+  readonly labels: readonly { readonly column: 'apps' | 'platform'; readonly x: number; readonly y: number }[];
   /** Fixed nodes by id. A node missing here is not drawn in this layout. */
   readonly pos: Readonly<Record<string, { readonly x: number; readonly y: number; readonly w: number }>>;
   readonly apps: Column;
@@ -42,8 +43,8 @@ export const WIDE_LAYOUT: FlowLayout = {
   h: 780,
   home: { x: 300, y: 20, w: 820, h: 740 },
   labels: [
-    { text: '서비스', x: 645, y: 168 },
-    { text: '인프라', x: 890, y: 168 },
+    { column: 'apps', x: 645, y: 168 },
+    { column: 'platform', x: 890, y: 168 },
   ],
   pos: {
     visitor: { x: 40, y: 250, w: 200 },
@@ -76,8 +77,8 @@ export const NARROW_LAYOUT: FlowLayout = (() => {
     h: bottom + 12,
     home: { x: 20, y: homeY, w: 410, h: bottom - homeY },
     labels: [
-      { text: '서비스', x: 80, y: appsTop - 12 },
-      { text: '인프라', x: 80, y: platformTop - 12 },
+      { column: 'apps', x: 80, y: appsTop - 12 },
+      { column: 'platform', x: 80, y: platformTop - 12 },
     ],
     pos: {
       visitor: { x: nodeX, y: 20, w: nodeW },

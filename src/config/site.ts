@@ -1,11 +1,13 @@
 import type { IconName } from '@/components/ui/icons';
+import type { Messages } from '@/i18n';
 
-/** Site-wide constants: identity, navigation and external links. */
+/**
+ * Site-wide constants: identity, navigation and external links.
+ * Texts that differ per language (role, tagline, menu labels) live in src/i18n.
+ */
 export const site = {
   name: 'Kim, Hwan',
   nameKo: '김환',
-  role: 'Software Developer',
-  tagline: 'I am always making something because I enjoy making things.',
   avatarUrl: 'https://avatars.githubusercontent.com/u/49547202',
   githubUser: 'akon47',
   repositoryUrl: 'https://github.com/akon47/kimhwan.kr',
@@ -14,15 +16,17 @@ export const site = {
 } as const;
 
 export interface NavItem {
-  readonly label: string;
+  /** Key of the label in the `nav` texts. */
+  readonly key: keyof Messages['nav'];
   readonly to: string;
+  readonly icon: IconName;
 }
 
 export const navItems: readonly NavItem[] = [
-  { label: 'Projects', to: '/projects' },
-  { label: 'Status', to: '/status' },
-  { label: 'Guestbook', to: '/guestbook' },
-  { label: 'About', to: '/about' },
+  { key: 'projects', to: '/projects', icon: 'code' },
+  { key: 'status', to: '/status', icon: 'activity' },
+  { key: 'guestbook', to: '/guestbook', icon: 'message' },
+  { key: 'about', to: '/about', icon: 'user' },
 ];
 
 export interface SocialLink {

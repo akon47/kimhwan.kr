@@ -1,4 +1,4 @@
-import type { CanvasBoard, ClientMessages, DeployEvent, ServerMessages } from '@/types/live';
+import type { ClientMessages, DeployEvent, GuestbookEntry, GuestbookPage, ServerMessages } from '@/types/live';
 
 type ServerType = keyof ServerMessages;
 type Handler<T extends ServerType> = (payload: ServerMessages[T]) => void;
@@ -124,8 +124,60 @@ async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   return (await response.json()) as T;
 }
 
-export function fetchCanvas(signal?: AbortSignal) {
-  return getJson<CanvasBoard>('/api/live/canvas', signal);
+const GUESTBOOK_URL = '/api/live/guestbook';
+
+/** Guestbook entries, newest first. `before` is the id of the oldest entry already shown. */
+export function fetchGuestbook({ before, limit }: { before?: number; limit?: number } = {}, signal?: AbortSignal) {
+  const params = new URLSearchParams();
+  if (before !== undefined) {
+    params.set('before', String(before));
+  }
+  if (limit !== undefined) {
+    params.set('limit', String(limit));
+  }
+  return getJson<GuestbookPage>(params.size ? `${GUESTBOOK_URL}?${params}` : GUESTBOOK_URL, signal);
+}
+
+/** Why a guestbook message was not saved. `retryAfterMs` is set for `cooldown`. */
+export class GuestbookError extends Error {
+  constructor(
+    readonly reason: 'empty' | 'cooldown' | 'failed',
+    readonly retryAfterMs = 0,
+  ) {
+    super(reason);
+  }
+}
+
+/** Leaves a message. Everyone connected, me included, also receives it as a GUESTBOOK message. */
+export async function postGuestbook(name: string, message: string): Promise<GuestbookEntry> {
+  let response: Response;
+  try {
+    response = await fetch(GUESTBOOK_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ name, message }),
+    });
+  } catch {
+    throw new GuestbookError('failed');
+  }
+  if (response.ok) {
+    return (await response.json()) as GuestbookEntry;
+  }
+  const body = (await response.json().catch(() => null)) as { error?: string; retryAfterMs?: number } | null;
+  if (response.status === 429) {
+    throw new GuestbookError('cooldown', body?.retryAfterMs ?? 0);
+  }
+  throw new GuestbookError(body?.error === 'EMPTY' ? 'empty' : 'failed');
+}
+
+/** Moderation: deletes an entry with the key from the owner's notification mail. Resolves to false when refused. */
+export async function deleteGuestbookEntry(id: number, key: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${GUESTBOOK_URL}/${id}`, { method: 'DELETE', headers: { 'x-admin-token': key } });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 export function fetchDeploys(signal?: AbortSignal) {

@@ -1,14 +1,18 @@
 <template>
   <DetailPanel :title="ups.model" :subtitle="subtitle" icon="🔋" :badge="statusLabel" :badge-tone="badgeTone" :width="600" @close="emit('close')">
     <div class="stats">
-      <StatTile compact label="배터리 잔량" :value="formatNumber(ups.chargePct)" unit="%" :meter="ups.chargePct ?? 0" meter-invert/>
-      <StatTile compact label="예상 버팀 시간" :value="formatNumber(ups.runtimeMin)" unit="분">지금 부하 기준</StatTile>
-      <StatTile compact label="부하" :value="formatNumber(ups.loadPct)" unit="%">
-        ≈ {{ watts ?? EMPTY }} W / 정격 {{ ups.nominalPowerW ?? EMPTY }} W
+      <StatTile compact :label="text.charge" :value="formatNumber(ups.chargePct)" unit="%" :meter="ups.chargePct ?? 0" meter-invert/>
+      <StatTile compact :label="text.runtime" :value="formatNumber(ups.runtimeMin)" :unit="text.minutesUnit">{{ text.runtimeNote }}</StatTile>
+      <StatTile compact :label="text.load" :value="formatNumber(ups.loadPct)" unit="%">
+        {{ text.loadNote(`${watts ?? EMPTY}`, `${ups.nominalPowerW ?? EMPTY}`) }}
       </StatTile>
-      <StatTile compact label="입력 전압" :value="formatNumber(ups.lineVolts, 1)" unit="V">정격 {{ details?.nominalInputV ?? EMPTY }} V</StatTile>
-      <StatTile compact label="배터리 전압" :value="formatNumber(ups.batteryVolts, 1)" unit="V">정격 {{ details?.nominalBatteryV ?? EMPTY }} V</StatTile>
-      <StatTile compact label="배터리 전환 횟수" :value="formatNumber(ups.transfers)" unit="회">apcupsd 시작 이후</StatTile>
+      <StatTile compact :label="text.inputVoltage" :value="formatNumber(ups.lineVolts, 1)" unit="V">
+        {{ text.nominal(`${details?.nominalInputV ?? EMPTY}`) }}
+      </StatTile>
+      <StatTile compact :label="text.batteryVoltage" :value="formatNumber(ups.batteryVolts, 1)" unit="V">
+        {{ text.nominal(`${details?.nominalBatteryV ?? EMPTY}`) }}
+      </StatTile>
+      <StatTile compact :label="text.transfers" :value="formatNumber(ups.transfers)" :unit="text.transfersUnit">{{ text.transfersNote }}</StatTile>
     </div>
 
     <template v-if="details">
@@ -25,7 +29,7 @@
       </section>
 
       <details class="raw">
-        <summary>apcupsd 원본 전체 ({{ rawEntries.length }}개 항목)</summary>
+        <summary>{{ text.raw(rawEntries.length) }}</summary>
         <table>
           <tbody>
             <tr v-for="[key, value] in rawEntries" :key="key">
@@ -36,7 +40,7 @@
         </table>
       </details>
     </template>
-    <p v-else class="pending">상세 항목은 상태 API 가 갱신된 뒤에 보입니다.</p>
+    <p v-else class="pending">{{ text.pending }}</p>
   </DetailPanel>
 </template>
 
@@ -44,33 +48,23 @@
 import { computed } from 'vue';
 import DetailPanel from '@/components/status/DetailPanel.vue';
 import StatTile from '@/components/status/StatTile.vue';
+import { useI18n } from '@/i18n';
 import type { Health, UpsStatus } from '@/types/status';
 import { EMPTY, formatNumber, formatSeconds } from '@/utils/format';
 
 const props = defineProps<{ ups: UpsStatus }>();
 const emit = defineEmits<{ close: [] }>();
 
+const { t } = useI18n();
+const text = computed(() => t.value.status.ups);
+
 const details = computed(() => props.ups.details);
 
-/** apcupsd status flags in plain words. */
-const STATUS_WORDS: Record<string, string> = {
-  ONLINE: '전원 정상',
-  ONBATT: '배터리 사용 중',
-  LOWBATT: '배터리 부족',
-  CAL: '보정 중',
-  TRIM: 'AVR 전압 낮춤',
-  BOOST: 'AVR 전압 올림',
-  OVERLOAD: '과부하',
-  REPLACEBATT: '배터리 교체 필요',
-  NOBATT: '배터리 없음',
-  COMMLOST: '통신 끊김',
-  SHUTTING: '종료 중',
-};
-
+/** apcupsd prints its state as flags ("ONLINE", "ONBATT LOWBATT"); the texts have them in plain words. */
 const statusLabel = computed(() => {
   const words = props.ups.status
     .split(/\s+/)
-    .map((word) => STATUS_WORDS[word])
+    .map((word) => text.value.flags[word])
     .filter((word): word is string => !!word);
   return words.length ? words.join(' · ') : props.ups.status;
 });
@@ -89,7 +83,7 @@ const badgeTone = computed<Health>(() => {
 const subtitle = computed(() => {
   const d = details.value;
   const parts = [d?.upsName, d?.serial ? `S/N ${d.serial}` : null].filter((part): part is string => !!part);
-  return parts.length ? parts.join(' · ') : 'apcupsd 가 USB 로 읽은 상태';
+  return parts.length ? parts.join(' · ') : text.value.subtitle;
 });
 
 const watts = computed(() => {
@@ -105,7 +99,7 @@ function withUnit(value: number | null, unit: string): string {
 
 /** apcupsd prints "2026-10-21 13:14:02 +0900"; the zone is always ours. */
 function formatStamp(value: string | null): string {
-  return value ? value.replace(/\s[+-]\d{4}$/, '') : '없음';
+  return value ? value.replace(/\s[+-]\d{4}$/, '') : text.value.none;
 }
 
 const groups = computed<{ title: string; note?: string; rows: [string, string][] }[]>(() => {
@@ -114,46 +108,47 @@ const groups = computed<{ title: string; note?: string; rows: [string, string][]
     return [];
   }
   const ups = props.ups;
+  const { shutdown, history, transfer, device, minutesUnit } = text.value;
   return [
     {
-      title: '안전 종료 조건',
-      note: '하나라도 해당되면 Proxmox 호스트를 끕니다',
+      title: shutdown.title,
+      note: shutdown.note,
       rows: [
-        ['배터리 잔량', `${withUnit(d.shutdownMinChargePct, '%')} 이하`],
-        ['남은 시간', `${withUnit(d.shutdownMinRuntimeMin, '분')} 이하`],
-        ['배터리 사용 시간', d.shutdownMaxOnBatterySec ? `${formatSeconds(d.shutdownMaxOnBatterySec)} 경과` : '제한 없음'],
+        [shutdown.charge, shutdown.atMost(withUnit(d.shutdownMinChargePct, '%'))],
+        [shutdown.runtime, shutdown.atMost(withUnit(d.shutdownMinRuntimeMin, minutesUnit))],
+        [shutdown.onBattery, d.shutdownMaxOnBatterySec ? shutdown.after(formatSeconds(d.shutdownMaxOnBatterySec)) : shutdown.noLimit],
       ],
     },
     {
-      title: '정전 이력',
+      title: history.title,
       rows: [
-        ['마지막 전환 이유', ups.lastTransfer ?? EMPTY],
-        ['마지막 배터리 전환', formatStamp(d.lastOnBatteryStart)],
-        ['마지막 복귀', formatStamp(d.lastOnBatteryEnd)],
-        ['이번 배터리 사용', formatSeconds(d.timeOnBatterySec)],
-        ['누적 배터리 사용', formatSeconds(d.cumOnBatterySec)],
+        [history.reason, ups.lastTransfer ?? EMPTY],
+        [history.lastStart, formatStamp(d.lastOnBatteryStart)],
+        [history.lastEnd, formatStamp(d.lastOnBatteryEnd)],
+        [history.current, formatSeconds(d.timeOnBatterySec)],
+        [history.cumulative, formatSeconds(d.cumOnBatterySec)],
       ],
     },
     {
-      title: '전압 전환 범위 · 감도',
+      title: transfer.title,
       rows: [
-        ['배터리로 넘어가는 입력 전압', `${withUnit(d.loTransferV, ' V')} 미만 또는 ${withUnit(d.hiTransferV, ' V')} 초과`],
-        ['감도', d.sense ?? EMPTY],
-        ['경고음 지연', d.alarmDelay ?? EMPTY],
-        ['자가 진단', d.selfTest ?? EMPTY],
+        [transfer.range, transfer.rangeValue(withUnit(d.loTransferV, ' V'), withUnit(d.hiTransferV, ' V'))],
+        [transfer.sensitivity, d.sense ?? EMPTY],
+        [transfer.alarmDelay, d.alarmDelay ?? EMPTY],
+        [transfer.selfTest, d.selfTest ?? EMPTY],
       ],
     },
     {
-      title: '장비',
+      title: device.title,
       rows: [
-        ['이름', d.upsName ?? EMPTY],
-        ['시리얼', d.serial ?? EMPTY],
-        ['펌웨어', d.firmware ?? EMPTY],
-        ['배터리 교체일', d.batteryDate ?? EMPTY],
-        ['연결', [d.cable, d.driver, d.upsMode].filter(Boolean).join(' · ') || EMPTY],
-        ['apcupsd', `${d.apcupsdVersion ?? EMPTY} · 시작 ${formatStamp(d.startedAt)}`],
-        ['상태 플래그', d.statFlag ? `${ups.status} (${d.statFlag})` : ups.status],
-        ['보고 시각', formatStamp(d.reportedAt)],
+        [device.name, d.upsName ?? EMPTY],
+        [device.serial, d.serial ?? EMPTY],
+        [device.firmware, d.firmware ?? EMPTY],
+        [device.batteryDate, d.batteryDate ?? EMPTY],
+        [device.connection, [d.cable, d.driver, d.upsMode].filter(Boolean).join(' · ') || EMPTY],
+        ['apcupsd', `${d.apcupsdVersion ?? EMPTY} · ${device.started(formatStamp(d.startedAt))}`],
+        [device.flags, d.statFlag ? `${ups.status} (${d.statFlag})` : ups.status],
+        [device.reportedAt, formatStamp(d.reportedAt)],
       ],
     },
   ];
