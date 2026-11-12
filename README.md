@@ -50,7 +50,7 @@ src/
 - 상태 페이지의 서비스 설명은 상태 API 가 `description`(한국어)과 `descriptionEn` 을 같이 내려 줍니다.
 
 ## ⚡ 실시간 기능
-- 백엔드는 별도 저장소 [akon47/kimhwan-live](https://github.com/akon47/kimhwan-live)(Spring Boot + WebSocket + Redis)이며 관문이 `/api/live/` 로 넘겨 줍니다.
+- 백엔드는 별도 저장소 [akon47/kimhwan-live](https://github.com/akon47/kimhwan-live)(Spring Boot + WebSocket + Redis)이며 nginx 게이트웨이가 `/api/live/` 로 넘겨 줍니다.
 - 접속자 수(헤더), 같은 페이지를 보는 사람들의 커서와 한마디(`/` 키), 방명록의 새 글(`/guestbook`), 배포 알림·피드가 이 연결 하나를 같이 씁니다.
 - 방명록은 로그인 없이 누구나 이름(선택)과 글을 남깁니다. 목록·글쓰기는 HTTP(`/api/live/guestbook`)라서 웹소켓이 끊겨도 쓸 수 있고, 연결돼 있으면 남의 글이 바로 나타납니다.
   새 글은 운영자에게 메일로 가고, 메일의 삭제 링크(`/guestbook?delete=<id>&key=<삭제 키>`)를 열면 그 글을 지울지 묻습니다. 자세한 것은 kimhwan-live 의 README.

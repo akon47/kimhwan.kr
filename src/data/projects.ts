@@ -27,7 +27,7 @@ export const projects: readonly Project[] = [
     title: 'Claude Account Switcher',
     summary: {
       en: 'A Windows system-tray app that switches between multiple Claude Code (CLI) accounts with one click and runs them concurrently in isolated sessions. Supports 14 UI languages and ships with an auto-updating installer, also available via winget.',
-      ko: '여러 Claude Code(CLI) 계정을 클릭 한 번으로 바꿔 쓰고, 격리된 세션으로 동시에 실행할 수 있는 Windows 시스템 트레이 앱입니다. 14개 UI 언어를 지원하며 자동 업데이트 설치 프로그램과 winget 으로 배포합니다.',
+      ko: '여러 Claude Code(CLI) 계정을 클릭 한 번으로 전환하고, 세션을 분리해 동시에 실행할 수 있는 Windows 트레이 앱입니다. UI 는 14개 언어를 지원하고, 자동 업데이트되는 설치 파일과 winget 으로 배포합니다.',
     },
     kind: 'desktop',
     primaryLink: { kind: 'download', url: 'https://github.com/akon47/claude-account-switcher-windows/releases/latest' },
@@ -38,7 +38,7 @@ export const projects: readonly Project[] = [
     title: 'NvChat',
     summary: {
       en: 'A Windows desktop app to chat with the free LLMs on build.nvidia.com. Streaming chat, saved conversations, live markdown/code rendering, reasoning display, image attachments and in-app auto-update, shipped as a single .exe.',
-      ko: 'build.nvidia.com 의 무료 LLM 과 대화하는 Windows 데스크톱 앱입니다. 스트리밍 채팅, 대화 저장, 실시간 마크다운·코드 렌더링, 추론 과정 표시, 이미지 첨부, 앱 내 자동 업데이트를 지원하며 단일 .exe 로 배포합니다.',
+      ko: 'build.nvidia.com 의 무료 LLM 과 대화하는 Windows 데스크톱 앱입니다. 스트리밍 채팅, 대화 저장, 실시간 마크다운·코드 렌더링, 추론 과정 표시, 이미지 첨부, 앱 내 자동 업데이트를 지원하고, .exe 파일 하나로 배포합니다.',
     },
     kind: 'desktop',
     primaryLink: { kind: 'download', url: 'https://github.com/akon47/NvChat/releases/latest' },
@@ -93,7 +93,7 @@ export const projects: readonly Project[] = [
     title: 'VisitCounter',
     summary: {
       en: 'The visit-counter project was created because I wanted to count the number of visitors to a specific page. There is an open source project called hits, but there is a problem that the hits value continuously increases when refreshed because there is no handling of duplicate IPs, so I created it myself.',
-      ko: '특정 페이지의 방문자 수를 세고 싶어서 만든 프로젝트입니다. hits 라는 오픈소스가 있지만 중복 IP 처리가 없어 새로고침할 때마다 숫자가 계속 올라가는 문제가 있어 직접 만들었습니다.',
+      ko: '특정 페이지의 방문자 수를 세고 싶어서 만든 프로젝트입니다. hits 라는 오픈소스가 있지만 중복 IP 처리가 없어 새로고침할 때마다 숫자가 올라가서 직접 만들었습니다.',
     },
     kind: 'web',
     primaryLink: { kind: 'visit', url: 'https://counter.kimhwan.kr/' },
@@ -104,7 +104,7 @@ export const projects: readonly Project[] = [
     title: 'Screen Share',
     summary: {
       en: 'This is a project where you can easily share your screen.',
-      ko: '화면을 간편하게 공유할 수 있는 프로젝트입니다.',
+      ko: '브라우저에서 화면을 간편하게 공유하는 서비스입니다.',
     },
     kind: 'web',
     primaryLink: { kind: 'visit', url: 'https://screenshare.kimhwan.kr/' },
@@ -115,7 +115,7 @@ export const projects: readonly Project[] = [
     title: 'ScreenRecorder',
     summary: {
       en: 'A simple recording program with the ability to record screens and audio on your computer. Supports H.264/H.265 hardware encoding (NVENC, QuickSync), region/window/display capture and hotkeys.',
-      ko: '컴퓨터 화면과 오디오를 녹화하는 간단한 녹화 프로그램입니다. H.264/H.265 하드웨어 인코딩(NVENC, QuickSync), 영역·창·디스플레이 캡처와 단축키를 지원합니다.',
+      ko: '컴퓨터 화면과 소리를 녹화하는 간단한 프로그램입니다. H.264/H.265 하드웨어 인코딩(NVENC, QuickSync), 영역·창·디스플레이 캡처와 단축키를 지원합니다.',
     },
     kind: 'desktop',
     primaryLink: { kind: 'download', url: 'https://github.com/akon47/ScreenRecorder/releases/' },
@@ -126,7 +126,7 @@ export const projects: readonly Project[] = [
     title: 'ToneGenerator',
     summary: {
       en: 'A tone audio generation program that can be used in situations where testing of audio equipment or other constant audio signals are required.',
-      ko: '오디오 장비를 테스트하거나 일정한 오디오 신호가 필요할 때 쓰는 톤 오디오 생성 프로그램입니다.',
+      ko: '오디오 장비를 테스트하거나 일정한 신호음이 필요할 때 쓰는 톤 발생기입니다.',
     },
     kind: 'desktop',
     primaryLink: { kind: 'download', url: 'https://github.com/akon47/ToneGenerator/releases' },
