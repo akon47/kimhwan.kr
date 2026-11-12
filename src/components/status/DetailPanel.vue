@@ -1,113 +1,168 @@
 <template>
-  <div class="backdrop" @click.self="emit('close')">
-    <div class="panel" role="dialog" aria-modal="true" :aria-label="title" :style="{ width: `min(${width}px, 100%)` }">
-      <div class="head">
-        <span v-if="icon" class="icon">{{ icon }}</span>
-        <div class="titles">
-          <div class="name">{{ title }}</div>
-          <div v-if="subtitle" class="desc">{{ subtitle }}</div>
-        </div>
-        <span v-if="badge" class="badge" :class="badgeClass">{{ badge }}</span>
-        <button class="close" aria-label="닫기" @click="emit('close')">✕</button>
+  <Teleport to="body">
+    <div class="backdrop" @click.self="emit('close')">
+      <div
+        ref="panel"
+        class="panel"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="title"
+        tabindex="-1"
+        :style="{ width: `min(${width}px, 100%)` }"
+      >
+        <header class="head">
+          <span v-if="icon" class="head__icon" aria-hidden="true">{{ icon }}</span>
+          <div class="head__titles">
+            <h2 class="head__name">{{ title }}</h2>
+            <p v-if="subtitle" class="head__desc">{{ subtitle }}</p>
+          </div>
+          <span v-if="badge" class="badge" :class="badgeTone ? `badge--${badgeTone}` : undefined">{{ badge }}</span>
+          <button type="button" class="btn btn--ghost btn--icon" aria-label="닫기" @click="emit('close')">
+            <AppIcon name="close"/>
+          </button>
+        </header>
+        <slot/>
       </div>
-      <slot/>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, useTemplateRef } from 'vue';
+import AppIcon from '@/components/ui/AppIcon.vue';
+import type { Health } from '@/types/status';
 
+/** Modal shell for the dashboard's detail views. Closes on Escape, backdrop click or the close button. */
 withDefaults(
   defineProps<{
     title: string;
     subtitle?: string;
+    /** Emoji shown before the title. */
     icon?: string;
     badge?: string;
-    /** up | degraded | down — colours the badge. */
-    badgeClass?: string;
+    badgeTone?: Health;
+    /** Maximum width in px. */
     width?: number;
   }>(),
-  { subtitle: '', icon: '', badge: '', badgeClass: '', width: 520 },
+  { subtitle: '', icon: '', badge: '', badgeTone: undefined, width: 520 },
 );
 
 const emit = defineEmits<{ close: [] }>();
 
-function onKey(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
+const panel = useTemplateRef<HTMLElement>('panel');
+let previousFocus: Element | null = null;
+let previousOverflow = '';
+
+function onKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
     emit('close');
   }
 }
 
-onMounted(() => document.addEventListener('keydown', onKey));
-onUnmounted(() => document.removeEventListener('keydown', onKey));
+onMounted(() => {
+  previousFocus = document.activeElement;
+  previousOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+  document.addEventListener('keydown', onKeydown);
+  panel.value?.focus();
+});
+
+onUnmounted(() => {
+  document.body.style.overflow = previousOverflow;
+  document.removeEventListener('keydown', onKeydown);
+  if (previousFocus instanceof HTMLElement) {
+    previousFocus.focus();
+  }
+});
 </script>
 
 <style scoped>
 .backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  z-index: var(--z-dialog);
   display: grid;
   place-items: center;
-  padding: 16px;
-  z-index: 50;
+  padding: var(--space-4);
+  background: var(--color-backdrop);
+  backdrop-filter: blur(3px);
+  animation: fade-in var(--duration-base) var(--ease-out);
 }
 
 .panel {
-  max-height: 90vh;
-  overflow-y: auto;
-  background: var(--content-background-color);
-  color: var(--base-color);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   display: grid;
-  row-gap: 16px;
   align-content: start;
+  gap: var(--space-4);
+  max-height: 90dvh;
+  padding: var(--space-5);
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  outline: none;
+  animation: pop-in var(--duration-base) var(--ease-out);
 }
 
 .head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
-.icon {
-  font-size: 28px;
+.head__icon {
+  font-size: 1.75rem;
+  line-height: 1;
 }
 
-.titles {
+.head__titles {
   flex: 1;
   min-width: 0;
 }
 
-.name {
-  font-size: 18px;
-  font-weight: bold;
+.head__name {
+  font-size: var(--text-lg);
 }
 
-.desc {
-  font-size: 13px;
-  opacity: 0.7;
+.head__desc {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 
 .badge {
-  font-size: 12px;
-  font-weight: bold;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--menu-hover-color);
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   white-space: nowrap;
 }
 
-.badge.up { color: #2ea043; }
-.badge.degraded { color: #d29922; }
-.badge.down { color: #f85149; }
+.badge--up {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
 
-.close {
-  padding: 4px 10px;
-  font-size: 14px;
+.badge--degraded {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.badge--down {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
 }
 </style>

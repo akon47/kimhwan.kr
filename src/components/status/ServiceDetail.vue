@@ -4,83 +4,76 @@
     :subtitle="service.description"
     :icon="service.icon"
     :badge="healthLabel(service.health)"
-    :badge-class="service.health"
+    :badge-tone="service.health"
     @close="emit('close')"
   >
-    <div class="links">
-      <a v-if="service.url" :href="service.url" target="_blank" rel="noopener" class="btn primary">열기 ↗</a>
-      <a v-for="r in service.repos" :key="r" :href="r" target="_blank" rel="noopener" class="btn">{{ repoLabel(r) }}</a>
+    <div v-if="service.url || service.repos?.length" class="links">
+      <a v-if="service.url" :href="service.url" target="_blank" rel="noopener" class="btn btn--sm btn--primary">
+        열기
+        <AppIcon name="arrow-up-right" :size="14"/>
+      </a>
+      <a v-for="repo in service.repos" :key="repo" :href="repo" target="_blank" rel="noopener" class="btn btn--sm">
+        <AppIcon name="github" :size="14"/>
+        {{ repoLabel(repo) }}
+      </a>
     </div>
 
-    <div class="grid">
-      <div class="stat">
-        <div class="label">가동률 24h</div>
-        <div class="value">{{ pctText(stats?.uptime24hPct) }}</div>
-      </div>
-      <div class="stat">
-        <div class="label">가동률 30d</div>
-        <div class="value">{{ pctText(stats?.uptime30dPct) }}</div>
-      </div>
-      <div class="stat">
-        <div class="label">응답 (지금 / 24h 평균)</div>
-        <div class="value">{{ service.latencyMs ?? '–' }} <small>ms</small> / {{ stats?.avgLatency24hMs ?? '–' }} <small>ms</small></div>
-      </div>
-      <div class="stat">
-        <div class="label">최근 {{ windowMinutes }}분 트래픽</div>
-        <div class="value small">{{ traffic ? `${fmtRate(traffic.rpm)} · ↑${fmtBps(traffic.bpsOut)} ↓${fmtBps(traffic.bpsIn)}` : '–' }}</div>
-      </div>
+    <div class="stats">
+      <StatTile compact label="가동률 24h" :value="formatAvailability(stats?.uptime24hPct)"/>
+      <StatTile compact label="가동률 30d" :value="formatAvailability(stats?.uptime30dPct)"/>
+      <StatTile compact label="응답 (지금 / 24h 평균)" :value="latencyText"/>
+      <StatTile compact :label="`최근 ${windowMinutes}분 트래픽`" :value="trafficText"/>
     </div>
 
-    <div v-if="stats && stats.latency24h.some((v) => v !== null)" class="spark">
-      <div class="label">응답 시간 24h (ms)</div>
-      <SparkLine :values="stats.latency24h" :width="440" :height="48"/>
-    </div>
+    <section v-if="stats?.latency24h.some((value) => value !== null)" class="section">
+      <h3 class="section__title">응답 시간 24h (ms)</h3>
+      <SparkLine :values="stats.latency24h" :width="440" :height="48" class="spark"/>
+    </section>
 
-    <div class="checks">
-      <div class="label">점검 항목</div>
-      <div v-for="c in service.checks" :key="c.name" class="check" :class="{ ok: c.ok }">
-        <span class="mark">{{ c.ok ? '✓' : '✗' }}</span>
-        <span class="cname">{{ c.name }}</span>
-        <span class="cmeta">
-          <template v-if="c.status">HTTP {{ c.status }} · </template>{{ c.ms }} ms<template v-if="c.error"> · {{ c.error }}</template>
-        </span>
-      </div>
-    </div>
+    <section class="section">
+      <h3 class="section__title">점검 항목</h3>
+      <ul class="checks">
+        <li v-for="check in service.checks" :key="check.name" class="check" :class="{ 'check--failed': !check.ok }">
+          <AppIcon :name="check.ok ? 'check' : 'close'" :size="14" class="check__mark"/>
+          <span class="check__name">{{ check.name }}</span>
+          <span class="check__meta tabular">
+            <template v-if="check.status">HTTP {{ check.status }} · </template>{{ check.ms }} ms<template v-if="check.error"> · {{ check.error }}</template>
+          </span>
+        </li>
+      </ul>
+    </section>
   </DetailPanel>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import DetailPanel from '@/components/status/DetailPanel.vue';
-import SparkLine from '@/components/status/SparkLine.vue';
-import type { Health, ServiceStats, ServiceStatus } from '@/types/status';
+import StatTile from '@/components/status/StatTile.vue';
+import AppIcon from '@/components/ui/AppIcon.vue';
+import SparkLine from '@/components/ui/SparkLine.vue';
+import type { ServiceStats, ServiceStatus } from '@/types/status';
+import { EMPTY, formatAvailability, formatBps, formatRate } from '@/utils/format';
+import { healthLabel, type TrafficRate } from '@/utils/status';
 
-defineProps<{
+const props = defineProps<{
   service: ServiceStatus;
   stats?: ServiceStats;
-  traffic?: { rpm: number; bpsOut: number; bpsIn: number };
+  traffic?: TrafficRate;
   windowMinutes: number;
 }>();
 
 const emit = defineEmits<{ close: [] }>();
 
-function healthLabel(h: Health): string {
-  return { up: '정상', degraded: '일부 문제', down: '중단' }[h];
-}
+const latencyText = computed(() => `${props.service.latencyMs ?? EMPTY} ms / ${props.stats?.avgLatency24hMs ?? EMPTY} ms`);
 
-function pctText(v: number | null | undefined): string {
-  return v === null || v === undefined ? '–' : `${v.toFixed(v >= 99.95 ? 0 : 1)}%`;
-}
+const trafficText = computed(() => {
+  const t = props.traffic;
+  return t ? `${formatRate(t.rpm)} · ↑${formatBps(t.bpsOut)} ↓${formatBps(t.bpsIn)}` : EMPTY;
+});
 
+/** "https://github.com/akon47/visit-counter" → "akon47/visit-counter" */
 function repoLabel(url: string): string {
   return url.replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '');
-}
-
-function fmtRate(r: number): string {
-  return r >= 10 ? `${r.toFixed(0)}/min` : `${r.toFixed(1)}/min`;
-}
-
-function fmtBps(b: number): string {
-  return b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB/s` : b >= 1024 ? `${(b / 1024).toFixed(0)} KB/s` : `${b.toFixed(0)} B/s`;
 }
 </script>
 
@@ -88,102 +81,66 @@ function fmtBps(b: number): string {
 .links {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
-.btn {
-  font-size: 12px;
-  padding: 6px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: inherit;
-  text-decoration: none;
-}
-
-.btn:hover {
-  background: var(--menu-hover-color);
-  text-decoration: none;
-}
-
-.btn.primary {
-  border-color: var(--link-accent-color);
-  color: var(--link-accent-color);
-}
-
-.grid {
+.stats {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
 }
 
-.stat {
-  padding: 10px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
+.section {
+  display: grid;
+  gap: var(--space-2);
 }
 
-.label {
-  font-size: 11px;
-  opacity: 0.65;
-  margin-bottom: 4px;
-}
-
-.value {
-  font-size: 18px;
-  font-weight: bold;
-}
-
-.value.small {
-  font-size: 13px;
-}
-
-.value small {
-  font-size: 11px;
-  font-weight: normal;
-  opacity: 0.7;
+.section__title {
+  color: var(--color-text-subtle);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0;
 }
 
 .spark {
-  display: grid;
-  row-gap: 4px;
+  width: 100%;
 }
 
 .checks {
   display: grid;
-  row-gap: 6px;
+  gap: var(--space-2);
 }
 
 .check {
   display: flex;
-  gap: 10px;
-  align-items: baseline;
-  font-size: 13px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: rgba(248, 81, 73, 0.1);
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  font-size: var(--text-sm);
 }
 
-.check.ok {
-  background: var(--menu-hover-color);
+.check__mark {
+  color: var(--color-success);
 }
 
-.mark {
-  color: #f85149;
-  font-weight: bold;
+.check--failed {
+  background: var(--color-danger-soft);
 }
 
-.check.ok .mark {
-  color: #2ea043;
+.check--failed .check__mark {
+  color: var(--color-danger);
 }
 
-.cname {
-  font-weight: bold;
+.check__name {
+  font-weight: var(--weight-semibold);
 }
 
-.cmeta {
-  opacity: 0.7;
-  font-size: 12px;
+.check__meta {
   margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
   text-align: right;
 }
 </style>

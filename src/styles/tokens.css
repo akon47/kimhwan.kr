@@ -1,0 +1,136 @@
+/*
+ * Design tokens. Every colour, size and motion value used by components comes from here.
+ * The theme is selected by `data-theme` on <html> (see composables/useTheme.ts and the inline script in index.html).
+ */
+@layer tokens {
+  :root {
+    color-scheme: light;
+
+    /* ----- colour: surfaces & text ----- */
+    --color-bg: #fafafa;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f4f4f5;
+    --color-border: #e4e4e7;
+    --color-border-strong: #d4d4d8;
+    --color-text: #18181b;
+    --color-text-muted: #52525b;
+    --color-text-subtle: #71717a;
+
+    /* ----- colour: brand ----- */
+    --color-accent: #4f46e5;
+    --color-accent-hover: #4338ca;
+    --color-on-accent: #ffffff;
+    --gradient-accent: linear-gradient(110deg, #4f46e5 0%, #9333ea 55%, #db2777 100%);
+
+    /* ----- colour: status ----- */
+    --color-success: #16a34a;
+    --color-warning: #d97706;
+    --color-danger: #dc2626;
+    --color-neutral: #a1a1aa;
+
+    /* ----- colour: flow map overlays ----- */
+    --color-flow-deploy: #0d9488;
+    --color-flow-logs: #9333ea;
+
+    --color-backdrop: rgb(9 9 11 / 0.5);
+
+    /* ----- derived (follow the values above in both themes) ----- */
+    --color-accent-soft: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    --color-success-soft: color-mix(in srgb, var(--color-success) 14%, transparent);
+    --color-warning-soft: color-mix(in srgb, var(--color-warning) 16%, transparent);
+    --color-danger-soft: color-mix(in srgb, var(--color-danger) 14%, transparent);
+    --color-header-bg: color-mix(in srgb, var(--color-bg) 78%, transparent);
+
+    /* ----- typography ----- */
+    --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI',
+      'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, 'Cascadia Code', Consolas, 'Liberation Mono', monospace;
+
+    --text-2xs: 0.6875rem; /* 11px */
+    --text-xs: 0.75rem; /* 12px */
+    --text-sm: 0.8125rem; /* 13px */
+    --text-base: 0.9375rem; /* 15px */
+    --text-md: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.375rem;
+    --text-2xl: 1.75rem;
+    --text-3xl: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+
+    /* ----- spacing (4px grid) ----- */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-10: 2.5rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+    --space-20: 5rem;
+
+    /* ----- shape ----- */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --radius-full: 999px;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 16px -4px rgb(0 0 0 / 0.1), 0 1px 3px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 24px 60px -12px rgb(0 0 0 / 0.25);
+
+    /* ----- motion ----- */
+    --duration-fast: 120ms;
+    --duration-base: 200ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+    /* ----- layout ----- */
+    --layout-max: 1080px;
+    --layout-wide: 1400px;
+    --layout-gutter: clamp(1rem, 4vw, 2rem);
+    --header-height: 60px;
+
+    --z-header: 40;
+    --z-cursors: 50;
+    --z-toast: 55;
+    --z-dialog: 60;
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --color-bg: #09090b;
+    --color-surface: #111113;
+    --color-surface-muted: #1c1c1f;
+    --color-border: #27272a;
+    --color-border-strong: #3f3f46;
+    --color-text: #fafafa;
+    --color-text-muted: #a1a1aa;
+    --color-text-subtle: #8a8a93;
+
+    --color-accent: #8b93ff;
+    --color-accent-hover: #a5abff;
+    --color-on-accent: #0b0b12;
+    --gradient-accent: linear-gradient(110deg, #8b93ff 0%, #c084fc 55%, #f472b6 100%);
+
+    --color-success: #3fb950;
+    --color-warning: #d29922;
+    --color-danger: #f85149;
+    --color-neutral: #71717a;
+
+    --color-flow-deploy: #2dd4bf;
+    --color-flow-logs: #c084fc;
+
+    --color-backdrop: rgb(0 0 0 / 0.65);
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 16px -4px rgb(0 0 0 / 0.6), 0 1px 3px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 24px 60px -12px rgb(0 0 0 / 0.8);
+  }
+}

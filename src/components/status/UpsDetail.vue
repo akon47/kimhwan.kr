@@ -1,90 +1,36 @@
 <template>
-  <DetailPanel :title="ups.model" :subtitle="subtitle" icon="🔋" :badge="statusLabel" :badge-class="badgeClass" :width="600" @close="emit('close')">
-    <div class="grid">
-      <div class="stat">
-        <div class="label">배터리 잔량</div>
-        <div class="value">{{ n(ups.chargePct, 0) }}<small>%</small></div>
-        <div class="bar"><span :style="{ width: `${Math.min(100, ups.chargePct ?? 0)}%` }"/></div>
-      </div>
-      <div class="stat">
-        <div class="label">예상 버팀 시간</div>
-        <div class="value">{{ n(ups.runtimeMin, 0) }}<small>분</small></div>
-        <div class="note">지금 부하 기준</div>
-      </div>
-      <div class="stat">
-        <div class="label">부하</div>
-        <div class="value">{{ n(ups.loadPct, 0) }}<small>%</small></div>
-        <div class="note">≈ {{ watts ?? '–' }} W / 정격 {{ ups.nominalPowerW ?? '–' }} W</div>
-      </div>
-      <div class="stat">
-        <div class="label">입력 전압</div>
-        <div class="value">{{ n(ups.lineVolts, 1) }}<small>V</small></div>
-        <div class="note">정격 {{ d?.nominalInputV ?? '–' }} V</div>
-      </div>
-      <div class="stat">
-        <div class="label">배터리 전압</div>
-        <div class="value">{{ n(ups.batteryVolts, 1) }}<small>V</small></div>
-        <div class="note">정격 {{ d?.nominalBatteryV ?? '–' }} V</div>
-      </div>
-      <div class="stat">
-        <div class="label">배터리 전환 횟수</div>
-        <div class="value">{{ n(ups.transfers, 0) }}<small>회</small></div>
-        <div class="note">apcupsd 시작 이후</div>
-      </div>
+  <DetailPanel :title="ups.model" :subtitle="subtitle" icon="🔋" :badge="statusLabel" :badge-tone="badgeTone" :width="600" @close="emit('close')">
+    <div class="stats">
+      <StatTile compact label="배터리 잔량" :value="formatNumber(ups.chargePct)" unit="%" :meter="ups.chargePct ?? 0" meter-invert/>
+      <StatTile compact label="예상 버팀 시간" :value="formatNumber(ups.runtimeMin)" unit="분">지금 부하 기준</StatTile>
+      <StatTile compact label="부하" :value="formatNumber(ups.loadPct)" unit="%">
+        ≈ {{ watts ?? EMPTY }} W / 정격 {{ ups.nominalPowerW ?? EMPTY }} W
+      </StatTile>
+      <StatTile compact label="입력 전압" :value="formatNumber(ups.lineVolts, 1)" unit="V">정격 {{ details?.nominalInputV ?? EMPTY }} V</StatTile>
+      <StatTile compact label="배터리 전압" :value="formatNumber(ups.batteryVolts, 1)" unit="V">정격 {{ details?.nominalBatteryV ?? EMPTY }} V</StatTile>
+      <StatTile compact label="배터리 전환 횟수" :value="formatNumber(ups.transfers)" unit="회">apcupsd 시작 이후</StatTile>
     </div>
 
-    <template v-if="d">
-      <section>
-        <h5>안전 종료 조건 <small>하나라도 해당되면 Proxmox 호스트를 끕니다</small></h5>
-        <div class="rows">
-          <span>배터리 잔량</span><span>{{ v(d.shutdownMinChargePct, '%') }} 이하</span>
-          <span>남은 시간</span><span>{{ v(d.shutdownMinRuntimeMin, '분') }} 이하</span>
-          <span>배터리 사용 시간</span><span>{{ d.shutdownMaxOnBatterySec ? `${fmtSec(d.shutdownMaxOnBatterySec)} 경과` : '제한 없음' }}</span>
-        </div>
-      </section>
-
-      <section>
-        <h5>정전 이력</h5>
-        <div class="rows">
-          <span>마지막 전환 이유</span><span>{{ ups.lastTransfer ?? '–' }}</span>
-          <span>마지막 배터리 전환</span><span>{{ fmtDate(d.lastOnBatteryStart) }}</span>
-          <span>마지막 복귀</span><span>{{ fmtDate(d.lastOnBatteryEnd) }}</span>
-          <span>이번 배터리 사용</span><span>{{ fmtSec(d.timeOnBatterySec) }}</span>
-          <span>누적 배터리 사용</span><span>{{ fmtSec(d.cumOnBatterySec) }}</span>
-        </div>
-      </section>
-
-      <section>
-        <h5>전압 전환 범위 · 감도</h5>
-        <div class="rows">
-          <span>배터리로 넘어가는 입력 전압</span><span>{{ v(d.loTransferV, ' V') }} 미만 또는 {{ v(d.hiTransferV, ' V') }} 초과</span>
-          <span>감도</span><span>{{ d.sense ?? '–' }}</span>
-          <span>경고음 지연</span><span>{{ d.alarmDelay ?? '–' }}</span>
-          <span>자가 진단</span><span>{{ d.selfTest ?? '–' }}</span>
-        </div>
-      </section>
-
-      <section>
-        <h5>장비</h5>
-        <div class="rows">
-          <span>이름</span><span>{{ d.upsName ?? '–' }}</span>
-          <span>시리얼</span><span>{{ d.serial ?? '–' }}</span>
-          <span>펌웨어</span><span>{{ d.firmware ?? '–' }}</span>
-          <span>배터리 교체일</span><span>{{ d.batteryDate ?? '–' }}</span>
-          <span>연결</span><span>{{ [d.cable, d.driver, d.upsMode].filter(Boolean).join(' · ') || '–' }}</span>
-          <span>apcupsd</span><span>{{ d.apcupsdVersion ?? '–' }} · 시작 {{ fmtDate(d.startedAt) }}</span>
-          <span>상태 플래그</span><span>{{ ups.status }}<template v-if="d.statFlag"> ({{ d.statFlag }})</template></span>
-          <span>보고 시각</span><span>{{ fmtDate(d.reportedAt) }}</span>
-        </div>
+    <template v-if="details">
+      <section v-for="group in groups" :key="group.title" class="group">
+        <h3 class="group__title">
+          {{ group.title }} <small v-if="group.note">{{ group.note }}</small>
+        </h3>
+        <dl class="rows">
+          <template v-for="[term, value] in group.rows" :key="term">
+            <dt>{{ term }}</dt>
+            <dd>{{ value }}</dd>
+          </template>
+        </dl>
       </section>
 
       <details class="raw">
         <summary>apcupsd 원본 전체 ({{ rawEntries.length }}개 항목)</summary>
         <table>
           <tbody>
-            <tr v-for="[k, val] in rawEntries" :key="k">
-              <th>{{ k }}</th>
-              <td>{{ val }}</td>
+            <tr v-for="[key, value] in rawEntries" :key="key">
+              <th scope="row">{{ key }}</th>
+              <td>{{ value }}</td>
             </tr>
           </tbody>
         </table>
@@ -97,13 +43,16 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import DetailPanel from '@/components/status/DetailPanel.vue';
-import type { UpsStatus } from '@/types/status';
+import StatTile from '@/components/status/StatTile.vue';
+import type { Health, UpsStatus } from '@/types/status';
+import { EMPTY, formatNumber, formatSeconds } from '@/utils/format';
 
 const props = defineProps<{ ups: UpsStatus }>();
 const emit = defineEmits<{ close: [] }>();
 
-const d = computed(() => props.ups.details);
+const details = computed(() => props.ups.details);
 
+/** apcupsd status flags in plain words. */
 const STATUS_WORDS: Record<string, string> = {
   ONLINE: '전원 정상',
   ONBATT: '배터리 사용 중',
@@ -119,172 +68,168 @@ const STATUS_WORDS: Record<string, string> = {
 };
 
 const statusLabel = computed(() => {
-  const words = props.ups.status.split(/\s+/).map((w) => STATUS_WORDS[w]).filter((w): w is string => !!w);
+  const words = props.ups.status
+    .split(/\s+/)
+    .map((word) => STATUS_WORDS[word])
+    .filter((word): word is string => !!word);
   return words.length ? words.join(' · ') : props.ups.status;
 });
 
-const badgeClass = computed(() => {
-  const s = props.ups.status;
-  if (/LOWBATT|COMMLOST|OVERLOAD|REPLACEBATT|NOBATT|SHUTTING/.test(s)) {
+const badgeTone = computed<Health>(() => {
+  const status = props.ups.status;
+  if (/LOWBATT|COMMLOST|OVERLOAD|REPLACEBATT|NOBATT|SHUTTING/.test(status)) {
     return 'down';
   }
-  if (/ONBATT|TRIM|BOOST|CAL/.test(s)) {
+  if (/ONBATT|TRIM|BOOST|CAL/.test(status)) {
     return 'degraded';
   }
-  return /ONLINE/.test(s) ? 'up' : 'degraded';
+  return /ONLINE/.test(status) ? 'up' : 'degraded';
 });
 
 const subtitle = computed(() => {
-  const parts = [d.value?.upsName, d.value?.serial ? `S/N ${d.value.serial}` : null].filter((x): x is string => !!x);
+  const d = details.value;
+  const parts = [d?.upsName, d?.serial ? `S/N ${d.serial}` : null].filter((part): part is string => !!part);
   return parts.length ? parts.join(' · ') : 'apcupsd 가 USB 로 읽은 상태';
 });
 
-const watts = computed(() =>
-  props.ups.loadPct !== null && props.ups.nominalPowerW !== null ? Math.round((props.ups.loadPct / 100) * props.ups.nominalPowerW) : null,
-);
+const watts = computed(() => {
+  const { loadPct, nominalPowerW } = props.ups;
+  return loadPct !== null && nominalPowerW !== null ? Math.round((loadPct / 100) * nominalPowerW) : null;
+});
 
-const rawEntries = computed(() => Object.entries(d.value?.raw ?? {}));
+const rawEntries = computed(() => Object.entries(details.value?.raw ?? {}));
 
-function n(x: number | null, digits: number): string {
-  return x === null ? '–' : x.toFixed(digits);
+function withUnit(value: number | null, unit: string): string {
+  return value === null ? EMPTY : `${value}${unit}`;
 }
 
-function v(x: number | null, unit: string): string {
-  return x === null ? '–' : `${x}${unit}`;
+/** apcupsd prints "2026-10-21 13:14:02 +0900"; the zone is always ours. */
+function formatStamp(value: string | null): string {
+  return value ? value.replace(/\s[+-]\d{4}$/, '') : '없음';
 }
 
-function fmtSec(s: number | null): string {
-  if (s === null) {
-    return '–';
+const groups = computed<{ title: string; note?: string; rows: [string, string][] }[]>(() => {
+  const d = details.value;
+  if (!d) {
+    return [];
   }
-  if (s < 60) {
-    return `${s}초`;
-  }
-  if (s < 3600) {
-    return `${Math.floor(s / 60)}분 ${s % 60}초`;
-  }
-  return `${Math.floor(s / 3600)}시간 ${Math.floor((s % 3600) / 60)}분`;
-}
-
-function fmtDate(s: string | null): string {
-  // apcupsd prints "2026-10-21 13:14:02 +0900"; the zone is always ours.
-  return s ? s.replace(/\s[+-]\d{4}$/, '') : '없음';
-}
+  const ups = props.ups;
+  return [
+    {
+      title: '안전 종료 조건',
+      note: '하나라도 해당되면 Proxmox 호스트를 끕니다',
+      rows: [
+        ['배터리 잔량', `${withUnit(d.shutdownMinChargePct, '%')} 이하`],
+        ['남은 시간', `${withUnit(d.shutdownMinRuntimeMin, '분')} 이하`],
+        ['배터리 사용 시간', d.shutdownMaxOnBatterySec ? `${formatSeconds(d.shutdownMaxOnBatterySec)} 경과` : '제한 없음'],
+      ],
+    },
+    {
+      title: '정전 이력',
+      rows: [
+        ['마지막 전환 이유', ups.lastTransfer ?? EMPTY],
+        ['마지막 배터리 전환', formatStamp(d.lastOnBatteryStart)],
+        ['마지막 복귀', formatStamp(d.lastOnBatteryEnd)],
+        ['이번 배터리 사용', formatSeconds(d.timeOnBatterySec)],
+        ['누적 배터리 사용', formatSeconds(d.cumOnBatterySec)],
+      ],
+    },
+    {
+      title: '전압 전환 범위 · 감도',
+      rows: [
+        ['배터리로 넘어가는 입력 전압', `${withUnit(d.loTransferV, ' V')} 미만 또는 ${withUnit(d.hiTransferV, ' V')} 초과`],
+        ['감도', d.sense ?? EMPTY],
+        ['경고음 지연', d.alarmDelay ?? EMPTY],
+        ['자가 진단', d.selfTest ?? EMPTY],
+      ],
+    },
+    {
+      title: '장비',
+      rows: [
+        ['이름', d.upsName ?? EMPTY],
+        ['시리얼', d.serial ?? EMPTY],
+        ['펌웨어', d.firmware ?? EMPTY],
+        ['배터리 교체일', d.batteryDate ?? EMPTY],
+        ['연결', [d.cable, d.driver, d.upsMode].filter(Boolean).join(' · ') || EMPTY],
+        ['apcupsd', `${d.apcupsdVersion ?? EMPTY} · 시작 ${formatStamp(d.startedAt)}`],
+        ['상태 플래그', d.statFlag ? `${ups.status} (${d.statFlag})` : ups.status],
+        ['보고 시각', formatStamp(d.reportedAt)],
+      ],
+    },
+  ];
+});
 </script>
 
 <style scoped>
-.grid {
+.stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
 }
 
 @media (max-width: 520px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-.stat {
-  padding: 10px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
+.group {
+  display: grid;
+  gap: var(--space-2);
 }
 
-.label {
-  font-size: 11px;
-  opacity: 0.65;
-  margin-bottom: 4px;
+.group__title {
+  font-size: var(--text-sm);
+  letter-spacing: 0;
 }
 
-.value {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.value small {
-  font-size: 11px;
-  font-weight: normal;
-  opacity: 0.7;
-  margin-left: 2px;
-}
-
-.note {
-  font-size: 11px;
-  opacity: 0.65;
-  margin-top: 2px;
-}
-
-.bar {
-  height: 5px;
-  margin-top: 6px;
-  border-radius: 3px;
-  background: var(--menu-hover-color);
-  overflow: hidden;
-}
-
-.bar span {
-  display: block;
-  height: 100%;
-  background: #2ea043;
-  border-radius: 3px;
-}
-
-section h5 {
-  margin: 0 0 6px;
-  font-size: 13px;
-}
-
-section h5 small {
-  font-weight: normal;
-  opacity: 0.6;
-  margin-left: 6px;
+.group__title small {
+  margin-left: var(--space-1);
+  color: var(--color-text-subtle);
+  font-weight: var(--weight-regular);
 }
 
 .rows {
   display: grid;
   grid-template-columns: max-content 1fr;
-  column-gap: 14px;
-  row-gap: 5px;
-  font-size: 13px;
+  gap: var(--space-1) var(--space-4);
+  font-size: var(--text-sm);
 }
 
-.rows > span:nth-child(odd) {
-  opacity: 0.65;
+.rows dt {
+  color: var(--color-text-subtle);
 }
 
 .raw summary {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
   cursor: pointer;
-  font-size: 12px;
-  opacity: 0.75;
   user-select: none;
 }
 
 .raw table {
   width: 100%;
-  margin-top: 8px;
-  border-collapse: collapse;
-  font-size: 12px;
-  font-family: var(--base-code-font-family, monospace);
+  margin-top: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
 }
 
 .raw th,
 .raw td {
+  padding: 3px var(--space-2);
+  border-bottom: 1px solid var(--color-border);
   text-align: left;
-  padding: 3px 6px;
-  border-bottom: 1px solid var(--border-color);
   vertical-align: top;
 }
 
 .raw th {
+  color: var(--color-text-subtle);
+  font-weight: var(--weight-regular);
   white-space: nowrap;
-  font-weight: normal;
-  opacity: 0.7;
 }
 
 .pending {
-  margin: 0;
-  font-size: 13px;
-  opacity: 0.7;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
 }
 </style>

@@ -1,0 +1,5 @@
+/*
+ * Cascade order for the global stylesheets. Later layers win.
+ * Component styles (<style scoped>) are unlayered, so they always override these.
+ */
+@layer reset, tokens, base, components, utilities;
