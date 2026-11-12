@@ -64,11 +64,20 @@ pipeline {
             steps {
                 echo 'Pull Docker Image & Docker Image Run'
                 sshagent(credentials: ['ssh']) {
-                    sh "ssh -o StrictHostKeyChecking=no root@10.10.10.25 'docker pull ${IMAGE_NAME}'"
-                    sh "ssh -o StrictHostKeyChecking=no root@10.10.10.25 'docker ps -q -a --filter name=${APP_NAME} | grep -q . && docker rm -f \$(docker ps -aq --filter name=${APP_NAME}) || true'"
-                    sh "ssh -o StrictHostKeyChecking=no root@10.10.10.25 'docker run -d --restart always --name ${APP_NAME} --net=host ${IMAGE_NAME}'"
-                    sh "ssh -o StrictHostKeyChecking=no root@10.10.10.25 'docker images -qf dangling=true | xargs -I{} docker rmi {} || true'"
-                    sh "ssh -o StrictHostKeyChecking=no root@10.10.10.25 'docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true'"
+                    // One remote script, so a failed pull stops before the running container is touched.
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no root@10.10.10.25 "APP_NAME=${APP_NAME} IMAGE_NAME=${IMAGE_NAME} bash -s" <<'REMOTE'
+set -eu
+# The docker CLI on this host can be newer than the daemon that is still running (packages were upgraded
+# without restarting dockerd); fall back to the API version that daemon speaks.
+docker version >/dev/null 2>&1 || export DOCKER_API_VERSION=1.41
+docker pull "$IMAGE_NAME"
+docker rm -f "$APP_NAME" >/dev/null 2>&1 || true
+docker run -d --restart always --name "$APP_NAME" --net=host "$IMAGE_NAME"
+docker image prune -f >/dev/null 2>&1 || true
+docker ps --filter "name=$APP_NAME" --format '{{.Names}} {{.Image}} {{.Status}}'
+REMOTE
+                    '''
                 }
             }
             post {
